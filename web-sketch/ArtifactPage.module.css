@@ -74,7 +74,7 @@
 
 .left {
   display: grid;
-  grid-template-rows: minmax(390px, 87%) 1fr; /* hero pane 40% taller than the original 280px/62% */
+  grid-template-rows: minmax(340px, 75%) 1fr;
   gap: 1rem;
   min-height: 0;
   padding: 1rem 1rem 1rem 1.25rem;
@@ -82,7 +82,7 @@
 }
 @media (max-width: 860px) {
   .left {
-    grid-template-rows: 64vh auto;
+    grid-template-rows: 56vh auto;
     border-right: none;
   }
 }

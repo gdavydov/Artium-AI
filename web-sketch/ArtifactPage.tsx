@@ -22,6 +22,7 @@ export interface AttachmentSummary {
 
 export interface ArtifactDetail {
   title: string;
+  artistName?: string; // nullable — unattributed works have no artist
   description: string;
   location?: string;
   medium: string;
@@ -91,6 +92,12 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
             <div className={styles.detailRow}>
               <span className={styles.monoLabel}>Title</span>
               <span className={styles.detailValue}>{artifact.title}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.monoLabel}>Artist</span>
+              <span className={styles.detailValue}>
+                {artifact.artistName ?? 'Unattributed'}
+              </span>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.monoLabel}>Medium</span>
