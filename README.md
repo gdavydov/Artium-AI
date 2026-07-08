@@ -1,2 +1,2 @@
 # Artium-AI
-Repo for Artium Claude AI app
+Repository for Artium Claude AI app
