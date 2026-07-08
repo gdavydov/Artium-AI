@@ -26,7 +26,7 @@ codebase
 | Entity | Description |
 |---|---|
 | **Artifact** | A single museum object/artwork. Has a description, a Medium (controlled list), a Location (free text — e.g. current gallery/display location), an optional Collection reference, and links to Artist, Period, and (optionally) School. |
-| **Collection** | An optional named grouping (e.g. a specific exhibit, donor collection, or curatorial sub-collection) that Artifact, Artist, School, Period, or Country records may optionally belong to. |
+| **Collection** | An optional named grouping (e.g. a specific exhibit, donor collection, or curatorial sub-collection) that Artifact, Artist, School, Period, or Country records may optionally belong to. Marked `public` or `private` to control catalog visibility. |
 | **Medium** | A controlled vocabulary of materials/techniques (e.g. "oil on canvas," "marble," "bronze"). Any staff role may add a new entry if the one needed doesn't exist yet; entries can be deactivated (not deleted) to retire duplicates. |
 | **Artist** | Creator of one or more artifacts. Has an optional embedded portrait image. Links to Country and Period, and optionally to School and Collection. |
 | **School** | An artistic school/movement (e.g. "Venetian School"). Has a list of associated Artists, and can also be attached directly to an Artifact when no specific artist is known. May optionally belong to a Collection. |
@@ -100,6 +100,7 @@ erDiagram
   COLLECTION {
     uuid id PK
     string collection_name
+    string type "public or private"
     string created_by_name "full name, not a User FK"
     string updated_by_name "nullable, full name, not a User FK"
     timestamp created_at
@@ -183,12 +184,18 @@ classification every record must have, but a way to tag a subset of records as
 belonging to something like a specific exhibit, a donor's gift, or a curatorial
 sub-collection.
 
-- Fields: `id` (UUID), `collection_name`, plus audit fields `created_by_name` (the
-  full name of the staff member who created the Collection, stored as text — not
-  a foreign key to `User`), `updated_by_name` (the full name of whoever last
-  modified it, nullable until a first edit occurs), `created_at`, and `updated_at`
-  (nullable until first modified). Further metadata (dates, curator notes) can be
-  added later without affecting the reference pattern below.
+- Fields: `id` (UUID), `collection_name`, `type` (`public` or `private`), plus
+  audit fields `created_by_name` (the full name of the staff member who created
+  the Collection, stored as text — not a foreign key to `User`), `updated_by_name`
+  (the full name of whoever last modified it, nullable until a first edit
+  occurs), `created_at`, and `updated_at` (nullable until first modified).
+  Further metadata (dates, curator notes) can be added later without affecting
+  the reference pattern below.
+- `type` is required and constrained to exactly two values: `public` (visible in
+  the Vercel-hosted catalog and to anonymous visitors) or `private` (staff-only,
+  used for in-progress exhibits, internal groupings, or donor collections not yet
+  ready to publish). Defaults to `private` so a newly created Collection isn't
+  exposed before a curator explicitly marks it public.
 - `created_by_name` and `updated_by_name` are stored as plain text captured at the
   time of the action, rather than referencing `User.id`. This is a deliberate
   denormalization: it keeps a readable historical record even if the staff
@@ -821,6 +828,7 @@ erDiagram
   COLLECTION {
     uuid id PK
     string collection_name
+    string type "public or private"
     string created_by_name "full name, not a User FK"
     string updated_by_name "nullable, full name, not a User FK"
     timestamp created_at
@@ -909,6 +917,7 @@ erDiagram
   COLLECTION {
     uuid id PK
     string collection_name
+    string type "public or private"
     string created_by_name "full name, not a User FK"
     string updated_by_name "nullable, full name, not a User FK"
     timestamp created_at
@@ -920,6 +929,7 @@ erDiagram
 |---|---|---|---|
 | id | UUID (PK) | No | Primary key |
 | collection_name | String | No | Name of the collection/exhibit/grouping |
+| type | String | No | `public` or `private` — controls whether the collection is visible in the public catalog |
 | created_by_name | String | No | Full name of the staff member who created the Collection, captured as text at creation time — not a foreign key to `User` |
 | updated_by_name | String | Yes | Full name of whoever last modified it; `NULL` until first edit |
 | created_at | Timestamp | No | Creation time |

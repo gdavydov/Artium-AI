@@ -36,6 +36,7 @@ create table "user" (
 create table collection (
   id               uuid primary key default gen_random_uuid(),
   collection_name  text not null,
+  type             text not null default 'private' check (type in ('public', 'private')),
   created_by_name  text not null,
   updated_by_name  text,
   created_at       timestamptz not null default now(),
@@ -145,6 +146,7 @@ create table edit_suggestion (
 -- =============================================================================
 
 create index idx_user_role_id            on "user"(role_id);
+create index idx_collection_type         on collection(type);
 create index idx_country_collection_id   on country(collection_id);
 create index idx_period_collection_id    on period(collection_id);
 create index idx_school_collection_id    on school(collection_id);
