@@ -57,7 +57,7 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
           )}
         </div>
 
-        <details className={styles.attachments} open>
+        <details className={styles.attachments}>
           <summary className={styles.attachmentsSummary}>
             Attachments ({artifact.attachments.length})
           </summary>

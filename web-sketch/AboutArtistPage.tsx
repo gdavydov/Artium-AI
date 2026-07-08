@@ -74,7 +74,7 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
           )}
         </div>
 
-        <details className={styles.attachments} open>
+        <details className={styles.attachments}>
           <summary className={styles.attachmentsSummary}>
             Attachments ({attachments.length})
           </summary>
