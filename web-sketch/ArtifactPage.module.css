@@ -75,7 +75,9 @@
 .left {
   display: grid;
   grid-template-rows: minmax(280px, 62%) 1fr;
+  gap: 1rem;
   min-height: 0;
+  padding: 1rem 1rem 1rem 1.25rem;
   border-right: 1px solid var(--panel-line);
 }
 @media (max-width: 860px) {
@@ -88,6 +90,7 @@
 .hero {
   position: relative;
   overflow: hidden; /* fixed pane — never scrolls */
+  border-radius: 6px;
   background: var(--panel);
 }
 .heroImage {
@@ -117,7 +120,8 @@
 
 .attachments {
   overflow-y: auto; /* scrollable pane */
-  padding: 1rem 1.1rem 2rem;
+  overflow-x: hidden;
+  padding: 0 0 0.5rem;
   background: var(--canvas);
 }
 
@@ -254,11 +258,4 @@
 .detailValue {
   font-size: 0.88rem;
   color: var(--ink);
-}
-.statusValue {
-  font-family: ui-monospace, monospace;
-  font-size: 0.7rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--verdigris);
 }

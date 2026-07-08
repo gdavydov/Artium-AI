@@ -152,12 +152,6 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
               </div>
             )}
             <div className={styles.detailRow}>
-              <span className={styles.monoLabel}>Status</span>
-              <span className={`${styles.detailValue} ${styles.statusValue}`}>
-                {artifact.status}
-              </span>
-            </div>
-            <div className={styles.detailRow}>
               <span className={styles.monoLabel}>Description</span>
               <span className={styles.detailValue}>{artifact.description}</span>
             </div>
