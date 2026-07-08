@@ -1,0 +1,135 @@
+[
+  {
+    "name": "Jan van Eyck",
+    "bio": "Pioneer of oil painting technique in Northern Europe; renowned for the Ghent Altarpiece and the Arnolfini Portrait, both celebrated for their minute realism and use of light.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Robert Campin",
+    "bio": "Often identified as the 'Master of Flémalle'; an early Netherlandish painter whose workshop is thought to have trained both Rogier van der Weyden and Jacques Daret.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Rogier van der Weyden",
+    "bio": "Leading Early Netherlandish painter known for emotionally intense religious compositions, most famously the Descent from the Cross.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Hans Memling",
+    "bio": "German-born painter who worked in Bruges; known for serene portraits and devotional panels that softened the intensity of his predecessors.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Dieric Bouts",
+    "bio": "Early Netherlandish painter noted for his early use of single-point perspective and calm, restrained figures.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Petrus Christus",
+    "bio": "Bruges-based painter who furthered the use of linear perspective in Netherlandish painting, likely influenced directly by van Eyck's workshop.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Hieronymus Bosch",
+    "bio": "Highly original painter of fantastical, moralizing religious allegory; best known for The Garden of Earthly Delights.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Hugo van der Goes",
+    "bio": "Ghent-based painter celebrated for the Portinari Altarpiece, whose emotional intensity influenced Italian painters who saw it after its export to Florence.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Gerard David",
+    "bio": "Bruges painter working at the close of the Early Netherlandish tradition, known for luminous landscapes and devotional works.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Early Netherlandish School"
+  },
+  {
+    "name": "Albrecht Dürer",
+    "bio": "Widely considered the greatest artist of the German Renaissance; painter, printmaker, and theorist who bridged Northern detail with Italian ideas of proportion and perspective.",
+    "country": "Germany",
+    "period": "Northern Renaissance",
+    "school": "German Renaissance School"
+  },
+  {
+    "name": "Lucas Cranach the Elder",
+    "bio": "Court painter closely associated with the Reformation and Martin Luther, known for portraits and mythological/allegorical nudes.",
+    "country": "Germany",
+    "period": "Northern Renaissance",
+    "school": "German Renaissance School"
+  },
+  {
+    "name": "Hans Holbein the Younger",
+    "bio": "German portraitist best known for his precise, psychologically penetrating portraits of the English royal court under Henry VIII.",
+    "country": "Germany",
+    "period": "Northern Renaissance",
+    "school": "German Renaissance School"
+  },
+  {
+    "name": "Matthias Grünewald",
+    "bio": "Painter of the Isenheim Altarpiece, notable for its raw emotional intensity and unconventional use of color and distortion.",
+    "country": "Germany",
+    "period": "Northern Renaissance",
+    "school": "German Renaissance School"
+  },
+  {
+    "name": "Albrecht Altdorfer",
+    "bio": "Regensburg painter and printmaker, among the earliest European artists to treat landscape as an independent subject.",
+    "country": "Germany",
+    "period": "Northern Renaissance",
+    "school": "German Renaissance School"
+  },
+  {
+    "name": "Pieter Bruegel the Elder",
+    "bio": "Flemish painter renowned for landscapes and scenes of peasant life, including Hunters in the Snow and The Harvesters.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Flemish School"
+  },
+  {
+    "name": "Quentin Matsys",
+    "bio": "Antwerp painter credited with founding the Antwerp school of painting, known for blending Netherlandish tradition with emerging Italian influence.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Flemish School"
+  },
+  {
+    "name": "Joachim Patinir",
+    "bio": "Early specialist in landscape painting, often subordinating religious figures to sweeping, fantastical panoramas.",
+    "country": "Netherlands",
+    "period": "Northern Renaissance",
+    "school": "Flemish School"
+  },
+  {
+    "name": "Jean Fouquet",
+    "bio": "Leading French painter and manuscript illuminator of the 15th century, court painter to Charles VII and Louis XI.",
+    "country": "France",
+    "period": "Northern Renaissance",
+    "school": "French Renaissance School"
+  },
+  {
+    "name": "Jean Clouet",
+    "bio": "Court painter to Francis I of France, known for his portraits combining Netherlandish precision with French courtly elegance.",
+    "country": "France",
+    "period": "Northern Renaissance",
+    "school": "French Renaissance School"
+  }
+]
