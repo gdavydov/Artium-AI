@@ -1,7 +1,9 @@
 // web-sketch/AboutArtistPage.tsx
 //
-// Copied from ArtifactPage.tsx as a starting point — layout/content not yet
-// adapted for an artist "about" page.
+// Copied from ArtifactPage.tsx as a starting point. Upper-left pane now shows
+// the artist's embedded portrait image instead of an artifact photo; the
+// rest of the layout (attachments, artifact detail fields) is still
+// artifact-shaped and hasn't been adapted for an artist "about" page yet.
 
 import styles from './AboutArtistPage.module.css';
 
@@ -22,6 +24,10 @@ export interface ArtistSummary {
   periodName: string;
   periodStartYear: number;
   periodEndYear: number;
+  // Portrait is stored as an embedded blob (artist.portrait_image / bytea in
+  // schema.sql), not an object storage key — portraitImageUrl is whatever the
+  // API resolves that blob to (e.g. a data: URI or a streaming endpoint).
+  portraitImageUrl?: string;
 }
 
 export interface ArtifactDetail {
@@ -44,25 +50,25 @@ function isImageType(fileType: string): boolean {
   return fileType.startsWith('image/');
 }
 
-export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
+export function AboutArtistPage({ artifact }: { artifact: ArtifactDetail }) {
   const { artist } = artifact;
 
   return (
     <div className={styles.shell}>
       <div className={styles.left}>
         <div className={styles.hero}>
-          {artifact.primaryImageUrl ? (
+          {artist.portraitImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={artifact.primaryImageUrl}
-              alt={artifact.title}
+              src={artist.portraitImageUrl}
+              alt={`Portrait of ${artist.name}`}
               className={styles.heroImage}
             />
           ) : (
             <div className={styles.heroPlaceholder}>
-              <span className={styles.monoLabel}>Primary image</span>
+              <span className={styles.monoLabel}>Artist portrait</span>
               <span className={styles.heroNote}>
-                Image pending upload &mdash; no object storage key attached yet
+                No portrait image embedded for this artist yet
               </span>
             </div>
           )}
