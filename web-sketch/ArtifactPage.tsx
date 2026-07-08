@@ -2,13 +2,13 @@
 //
 // Artifact detail page — three-pane layout:
 //   - Upper-left: primary artifact image, fixed (not scrollable), ~65% width.
-//   - Lower-left: attachments list, scrollable, same ~65% column.
-//   - Right: artist identity + bio + full artifact metadata, scrollable, ~35% width.
+//   - Lower-left: attachments list (collapsible), scrollable, same ~65% column.
+//   - Right: artifact metadata, scrollable, ~35% width. Artist identity/bio
+//     lives on AboutArtistPage instead — this page is artifact-only.
 //
-// Data shape mirrors supabase-schema/schema.prisma (Artist, Artifact, Attachment).
+// Data shape mirrors supabase-schema/schema.prisma (Artifact, Attachment).
 // Framework-agnostic React; drop into a Next.js route (e.g. app/artifacts/[id]/page.tsx)
-// once the app is scaffolded — this file only assumes props are already resolved
-// (e.g. by a GraphQL query joining Artifact -> Artist -> Period -> School -> Attachment).
+// once the app is scaffolded — this file only assumes props are already resolved.
 
 import styles from './ArtifactPage.module.css';
 
@@ -20,17 +20,6 @@ export interface AttachmentSummary {
   role?: string; // e.g. "Primary", "Detail", "Verso", "Report"
 }
 
-export interface ArtistSummary {
-  name: string;
-  birthYear?: number;
-  deathYear?: number;
-  bio: string;
-  school?: string;
-  periodName: string;
-  periodStartYear: number;
-  periodEndYear: number;
-}
-
 export interface ArtifactDetail {
   title: string;
   description: string;
@@ -38,13 +27,7 @@ export interface ArtifactDetail {
   medium: string;
   status: 'draft' | 'published';
   primaryImageUrl?: string;
-  artist: ArtistSummary;
   attachments: AttachmentSummary[];
-}
-
-function lifespan(artist: ArtistSummary): string {
-  if (!artist.birthYear && !artist.deathYear) return 'Dates unknown';
-  return `${artist.birthYear ?? '?'} – ${artist.deathYear ?? 'present'}`;
 }
 
 function isImageType(fileType: string): boolean {
@@ -52,8 +35,6 @@ function isImageType(fileType: string): boolean {
 }
 
 export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
-  const { artist } = artifact;
-
   return (
     <div className={styles.shell}>
       <div className={styles.left}>
@@ -104,36 +85,6 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
       </div>
 
       <div className={styles.right}>
-        <div>
-          <div className={`${styles.monoLabel} ${styles.kicker}`}>Artist</div>
-          <h1 className={styles.artistName}>{artist.name}</h1>
-
-          <div className={styles.fieldRow}>
-            <span className={styles.monoLabel}>Dates</span>
-            <span className={styles.fieldValue}>{lifespan(artist)}</span>
-          </div>
-          {artist.school && (
-            <div className={styles.fieldRow}>
-              <span className={styles.monoLabel}>School</span>
-              <span className={styles.fieldValue}>{artist.school}</span>
-            </div>
-          )}
-          <div className={styles.fieldRow}>
-            <span className={styles.monoLabel}>Period</span>
-            <span className={`${styles.fieldValue} ${styles.accent}`}>
-              {artist.periodName} &middot; {artist.periodStartYear}
-              &ndash;{artist.periodEndYear}
-            </span>
-          </div>
-        </div>
-
-        <div className={styles.divider} />
-
-        <div>
-          <h2 className={styles.sectionHeading}>Biography</h2>
-          <p className={styles.bioText}>{artist.bio}</p>
-        </div>
-
         <div className={styles.details}>
           <h2 className={styles.sectionHeading}>Artifact details</h2>
           <div className={styles.detailGrid}>

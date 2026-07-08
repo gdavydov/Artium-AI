@@ -74,7 +74,7 @@
 
 .left {
   display: grid;
-  grid-template-rows: minmax(280px, 62%) 1fr;
+  grid-template-rows: minmax(390px, 87%) 1fr; /* hero pane 40% taller than the original 280px/62% */
   gap: 1rem;
   min-height: 0;
   padding: 1rem 1rem 1rem 1.25rem;
@@ -82,7 +82,7 @@
 }
 @media (max-width: 860px) {
   .left {
-    grid-template-rows: 46vh auto;
+    grid-template-rows: 64vh auto;
     border-right: none;
   }
 }
@@ -228,53 +228,6 @@ details[open] > .attachmentsSummary::before {
   padding: 1.4rem 1.4rem 3rem;
 }
 
-.kicker {
-  margin: 0 0 0.3rem;
-}
-.artistName {
-  font-family: 'Iowan Old Style', Palatino, Charter, Georgia, serif;
-  font-weight: 600;
-  font-size: 1.7rem;
-  line-height: 1.15;
-  margin: 0 0 0.85rem;
-  text-wrap: balance;
-  color: var(--ink);
-}
-
-.fieldRow {
-  display: grid;
-  grid-template-columns: 6.4rem 1fr;
-  gap: 0.5rem;
-  padding: 0.4rem 0;
-  border-bottom: 1px solid var(--panel-line);
-  align-items: baseline;
-}
-.fieldValue {
-  font-size: 0.92rem;
-  color: var(--ink);
-}
-.accent {
-  color: var(--oxblood);
-  font-weight: 600;
-}
-
-.divider {
-  height: 1px;
-  background: linear-gradient(to right, var(--gold), transparent 70%);
-  margin: 1.4rem 0 1.1rem;
-}
-
-.bioText {
-  font-size: 0.94rem;
-  line-height: 1.55;
-  color: var(--ink);
-  max-width: 62ch;
-  margin: 0 0 0.9rem;
-}
-
-.details {
-  margin-top: 1.4rem;
-}
 .detailGrid {
   border-top: 1px solid var(--panel-line);
 }
