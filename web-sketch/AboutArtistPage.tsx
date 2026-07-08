@@ -148,8 +148,10 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
           <p className={styles.bioText}>{artist.bio}</p>
         </div>
 
-        <div className={styles.details}>
-          <h2 className={styles.sectionHeading}>Works ({artifacts.length})</h2>
+        <details className={styles.details} open>
+          <summary className={styles.attachmentsSummary}>
+            Works ({artifacts.length})
+          </summary>
           <div className={styles.workList}>
             {artifacts.map((work) => (
               <div key={work.id} className={styles.workRow}>
@@ -168,7 +170,7 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
               <p className={styles.emptyNote}>No known works yet.</p>
             )}
           </div>
-        </div>
+        </details>
       </div>
 
       <AttachmentModal attachment={selected} onClose={() => setSelected(null)} />
