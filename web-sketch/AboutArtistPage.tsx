@@ -6,7 +6,9 @@
 //   - Right: artist identity + bio, then a Works list (thumbnail + name) of
 //     this artist's artifacts, scrollable.
 
+import { useState } from 'react';
 import styles from './AboutArtistPage.module.css';
+import { AttachmentModal } from './AttachmentModal';
 
 export interface AttachmentSummary {
   id: string;
@@ -14,6 +16,7 @@ export interface AttachmentSummary {
   fileType: string; // MIME type
   label: string; // display name, e.g. derived from fileUrl
   role?: string; // e.g. "Primary", "Detail", "Verso", "Report"
+  previewUrl?: string; // resolved, browser-loadable URL (not the storage key)
 }
 
 export interface ArtistSummary {
@@ -53,6 +56,8 @@ export interface AboutArtistPageProps {
 }
 
 export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistPageProps) {
+  const [selected, setSelected] = useState<AttachmentSummary | null>(null);
+
   return (
     <div className={styles.shell}>
       <div className={styles.left}>
@@ -80,12 +85,22 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
           </summary>
           <div className={styles.attachmentList}>
             {attachments.map((a) => (
-              <div key={a.id} className={styles.attachmentRow}>
+              <button
+                type="button"
+                key={a.id}
+                className={styles.attachmentRow}
+                onClick={() => setSelected(a)}
+              >
                 <div
                   className={
                     isImageType(a.fileType)
                       ? styles.thumb
                       : `${styles.thumb} ${styles.thumbDoc}`
+                  }
+                  style={
+                    a.previewUrl && isImageType(a.fileType)
+                      ? { backgroundImage: `url(${a.previewUrl})` }
+                      : undefined
                   }
                 />
                 <div className={styles.attachmentMeta}>
@@ -93,7 +108,7 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
                   <div className={styles.attachmentSub}>{a.fileType}</div>
                 </div>
                 {a.role && <span className={styles.tag}>{a.role}</span>}
-              </div>
+              </button>
             ))}
             {attachments.length === 0 && (
               <p className={styles.emptyNote}>No attachments yet.</p>
@@ -155,6 +170,8 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
           </div>
         </div>
       </div>
+
+      <AttachmentModal attachment={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

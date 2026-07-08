@@ -10,7 +10,9 @@
 // Framework-agnostic React; drop into a Next.js route (e.g. app/artifacts/[id]/page.tsx)
 // once the app is scaffolded — this file only assumes props are already resolved.
 
+import { useState } from 'react';
 import styles from './ArtifactPage.module.css';
+import { AttachmentModal } from './AttachmentModal';
 
 export interface AttachmentSummary {
   id: string;
@@ -18,6 +20,7 @@ export interface AttachmentSummary {
   fileType: string; // MIME type
   label: string; // display name, e.g. derived from fileUrl
   role?: string; // e.g. "Primary", "Detail", "Verso", "Report"
+  previewUrl?: string; // resolved, browser-loadable URL (not the storage key)
 }
 
 export interface ArtifactDetail {
@@ -36,6 +39,8 @@ function isImageType(fileType: string): boolean {
 }
 
 export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
+  const [selected, setSelected] = useState<AttachmentSummary | null>(null);
+
   return (
     <div className={styles.shell}>
       <div className={styles.left}>
@@ -63,12 +68,22 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
           </summary>
           <div className={styles.attachmentList}>
             {artifact.attachments.map((a) => (
-              <div key={a.id} className={styles.attachmentRow}>
+              <button
+                type="button"
+                key={a.id}
+                className={styles.attachmentRow}
+                onClick={() => setSelected(a)}
+              >
                 <div
                   className={
                     isImageType(a.fileType)
                       ? styles.thumb
                       : `${styles.thumb} ${styles.thumbDoc}`
+                  }
+                  style={
+                    a.previewUrl && isImageType(a.fileType)
+                      ? { backgroundImage: `url(${a.previewUrl})` }
+                      : undefined
                   }
                 />
                 <div className={styles.attachmentMeta}>
@@ -76,7 +91,7 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
                   <div className={styles.attachmentSub}>{a.fileType}</div>
                 </div>
                 {a.role && <span className={styles.tag}>{a.role}</span>}
-              </div>
+              </button>
             ))}
             {artifact.attachments.length === 0 && (
               <p className={styles.emptyNote}>No attachments yet.</p>
@@ -116,6 +131,8 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
           </div>
         </div>
       </div>
+
+      <AttachmentModal attachment={selected} onClose={() => setSelected(null)} />
     </div>
   );
 }

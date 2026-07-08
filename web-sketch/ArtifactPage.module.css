@@ -172,10 +172,21 @@ details[open] > .attachmentsSummary::before {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  width: 100%;
   background: var(--panel);
   border: 1px solid var(--panel-line);
   border-radius: 4px;
   padding: 0.55rem 0.7rem;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.attachmentRow:hover {
+  border-color: var(--verdigris);
+}
+.attachmentRow:focus-visible {
+  outline: 2px solid var(--oxblood);
+  outline-offset: 2px;
 }
 .thumb {
   width: 42px;
