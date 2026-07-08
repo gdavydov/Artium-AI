@@ -246,17 +246,29 @@
 .details {
   margin-top: 1.4rem;
 }
-.detailGrid {
-  border-top: 1px solid var(--panel-line);
-}
-.detailRow {
-  display: grid;
-  grid-template-columns: 8rem 1fr;
+.workList {
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-  padding: 0.5rem 0;
+}
+.workRow {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.4rem 0;
   border-bottom: 1px solid var(--panel-line);
 }
-.detailValue {
-  font-size: 0.88rem;
+.workThumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 3px;
+  flex: none;
+  background-color: var(--canvas);
+  background-size: cover;
+  background-position: center;
+  background-image: linear-gradient(155deg, #2c2015, #6b4b2c);
+}
+.workName {
+  font-size: 0.9rem;
   color: var(--ink);
 }

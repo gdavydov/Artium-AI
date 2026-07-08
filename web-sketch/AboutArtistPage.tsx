@@ -1,9 +1,10 @@
 // web-sketch/AboutArtistPage.tsx
 //
-// Copied from ArtifactPage.tsx as a starting point. Upper-left pane now shows
-// the artist's embedded portrait image instead of an artifact photo; the
-// rest of the layout (attachments, artifact detail fields) is still
-// artifact-shaped and hasn't been adapted for an artist "about" page yet.
+// Artist "about" page — three-pane layout:
+//   - Upper-left: artist portrait (embedded blob), fixed, not scrollable.
+//   - Lower-left: attachments list, scrollable.
+//   - Right: artist identity + bio, then a Works list (thumbnail + name) of
+//     this artist's artifacts, scrollable.
 
 import styles from './AboutArtistPage.module.css';
 
@@ -30,15 +31,10 @@ export interface ArtistSummary {
   portraitImageUrl?: string;
 }
 
-export interface ArtifactDetail {
+export interface ArtifactSummary {
+  id: string;
   title: string;
-  description: string;
-  location?: string;
-  medium: string;
-  status: 'draft' | 'published';
-  primaryImageUrl?: string;
-  artist: ArtistSummary;
-  attachments: AttachmentSummary[];
+  thumbnailUrl?: string;
 }
 
 function lifespan(artist: ArtistSummary): string {
@@ -50,9 +46,13 @@ function isImageType(fileType: string): boolean {
   return fileType.startsWith('image/');
 }
 
-export function AboutArtistPage({ artifact }: { artifact: ArtifactDetail }) {
-  const { artist } = artifact;
+export interface AboutArtistPageProps {
+  artist: ArtistSummary;
+  attachments: AttachmentSummary[];
+  artifacts: ArtifactSummary[];
+}
 
+export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistPageProps) {
   return (
     <div className={styles.shell}>
       <div className={styles.left}>
@@ -76,10 +76,10 @@ export function AboutArtistPage({ artifact }: { artifact: ArtifactDetail }) {
 
         <div className={styles.attachments}>
           <h2 className={styles.sectionHeading}>
-            Attachments ({artifact.attachments.length})
+            Attachments ({attachments.length})
           </h2>
           <div className={styles.attachmentList}>
-            {artifact.attachments.map((a) => (
+            {attachments.map((a) => (
               <div key={a.id} className={styles.attachmentRow}>
                 <div
                   className={
@@ -95,7 +95,7 @@ export function AboutArtistPage({ artifact }: { artifact: ArtifactDetail }) {
                 {a.role && <span className={styles.tag}>{a.role}</span>}
               </div>
             ))}
-            {artifact.attachments.length === 0 && (
+            {attachments.length === 0 && (
               <p className={styles.emptyNote}>No attachments yet.</p>
             )}
           </div>
@@ -134,26 +134,24 @@ export function AboutArtistPage({ artifact }: { artifact: ArtifactDetail }) {
         </div>
 
         <div className={styles.details}>
-          <h2 className={styles.sectionHeading}>Artifact details</h2>
-          <div className={styles.detailGrid}>
-            <div className={styles.detailRow}>
-              <span className={styles.monoLabel}>Title</span>
-              <span className={styles.detailValue}>{artifact.title}</span>
-            </div>
-            <div className={styles.detailRow}>
-              <span className={styles.monoLabel}>Medium</span>
-              <span className={styles.detailValue}>{artifact.medium}</span>
-            </div>
-            {artifact.location && (
-              <div className={styles.detailRow}>
-                <span className={styles.monoLabel}>Location</span>
-                <span className={styles.detailValue}>{artifact.location}</span>
+          <h2 className={styles.sectionHeading}>Works ({artifacts.length})</h2>
+          <div className={styles.workList}>
+            {artifacts.map((work) => (
+              <div key={work.id} className={styles.workRow}>
+                <div
+                  className={styles.workThumb}
+                  style={
+                    work.thumbnailUrl
+                      ? { backgroundImage: `url(${work.thumbnailUrl})` }
+                      : undefined
+                  }
+                />
+                <span className={styles.workName}>{work.title}</span>
               </div>
+            ))}
+            {artifacts.length === 0 && (
+              <p className={styles.emptyNote}>No known works yet.</p>
             )}
-            <div className={styles.detailRow}>
-              <span className={styles.monoLabel}>Description</span>
-              <span className={styles.detailValue}>{artifact.description}</span>
-            </div>
           </div>
         </div>
       </div>
