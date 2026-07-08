@@ -148,7 +148,7 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
           <p className={styles.bioText}>{artist.bio}</p>
         </div>
 
-        <details className={styles.details} open>
+        <details className={styles.details}>
           <summary className={styles.attachmentsSummary}>
             Works ({artifacts.length})
           </summary>
