@@ -74,10 +74,10 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
           )}
         </div>
 
-        <div className={styles.attachments}>
-          <h2 className={styles.sectionHeading}>
+        <details className={styles.attachments} open>
+          <summary className={styles.attachmentsSummary}>
             Attachments ({attachments.length})
-          </h2>
+          </summary>
           <div className={styles.attachmentList}>
             {attachments.map((a) => (
               <div key={a.id} className={styles.attachmentRow}>
@@ -99,7 +99,7 @@ export function AboutArtistPage({ artist, attachments, artifacts }: AboutArtistP
               <p className={styles.emptyNote}>No attachments yet.</p>
             )}
           </div>
-        </div>
+        </details>
       </div>
 
       <div className={styles.right}>

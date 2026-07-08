@@ -75,10 +75,10 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
           )}
         </div>
 
-        <div className={styles.attachments}>
-          <h2 className={styles.sectionHeading}>
+        <details className={styles.attachments} open>
+          <summary className={styles.attachmentsSummary}>
             Attachments ({artifact.attachments.length})
-          </h2>
+          </summary>
           <div className={styles.attachmentList}>
             {artifact.attachments.map((a) => (
               <div key={a.id} className={styles.attachmentRow}>
@@ -100,7 +100,7 @@ export function ArtifactPage({ artifact }: { artifact: ArtifactDetail }) {
               <p className={styles.emptyNote}>No attachments yet.</p>
             )}
           </div>
-        </div>
+        </details>
       </div>
 
       <div className={styles.right}>

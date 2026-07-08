@@ -125,6 +125,36 @@
   background: var(--canvas);
 }
 
+.attachmentsSummary {
+  cursor: pointer;
+  font-family: Charter, Georgia, serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--ink);
+  padding: 0.15rem 0;
+  list-style: none;
+}
+.attachmentsSummary::-webkit-details-marker {
+  display: none;
+}
+.attachmentsSummary::before {
+  content: '\25B8';
+  display: inline-block;
+  width: 1rem;
+  color: var(--verdigris);
+  transition: transform 0.15s ease;
+}
+details[open] > .attachmentsSummary::before {
+  transform: rotate(90deg);
+}
+.attachmentsSummary:focus-visible {
+  outline: 2px solid var(--oxblood);
+  outline-offset: 2px;
+}
+.attachments .attachmentList {
+  margin-top: 0.65rem;
+}
+
 .sectionHeading {
   font-family: Charter, Georgia, serif;
   font-weight: 600;
