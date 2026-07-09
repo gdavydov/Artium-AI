@@ -29,18 +29,51 @@ create table "user" (
 );
 
 -- =============================================================================
--- Collection (optional grouping — audit fields store names, not User FKs,
--- per the design decision to keep a readable record even if accounts change)
+-- Organization (museum/institution — owns one or more Collections)
+-- =============================================================================
+
+create table organization (
+  id             uuid primary key default gen_random_uuid(),
+  name           text not null,
+  description    text,
+  website_url    text,
+  contact_email  text,
+  address        text,
+  created_at     timestamptz not null default now(),
+  updated_at     timestamptz
+);
+
+-- =============================================================================
+-- Collection (owned by an Organization — audit fields store names, not User
+-- FKs, per the design decision to keep a readable record even if accounts
+-- change)
 -- =============================================================================
 
 create table collection (
   id               uuid primary key default gen_random_uuid(),
+  organization_id  uuid not null references organization(id),
   collection_name  text not null,
   type             text not null default 'private' check (type in ('public', 'private')),
   created_by_name  text not null,
   updated_by_name  text,
   created_at       timestamptz not null default now(),
   updated_at       timestamptz
+);
+
+-- =============================================================================
+-- CollectionAccess (join table — grants a User "view" or "manage" access to a
+-- private Collection; see Section 2.4.2 of the Design Document. Admins bypass
+-- this table entirely in application logic and can always see everything.)
+-- =============================================================================
+
+create table collection_access (
+  id             uuid primary key default gen_random_uuid(),
+  collection_id  uuid not null references collection(id) on delete cascade,
+  user_id        uuid not null references "user"(id) on delete cascade,
+  access_level   text not null check (access_level in ('view', 'manage')),
+  granted_by     uuid references "user"(id),
+  granted_at     timestamptz not null default now(),
+  unique (collection_id, user_id)
 );
 
 -- =============================================================================
@@ -147,6 +180,10 @@ create table edit_suggestion (
 
 create index idx_user_role_id            on "user"(role_id);
 create index idx_collection_type         on collection(type);
+create index idx_collection_organization_id on collection(organization_id);
+create index idx_collection_access_collection_id on collection_access(collection_id);
+create index idx_collection_access_user_id  on collection_access(user_id);
+create index idx_collection_access_granted_by on collection_access(granted_by);
 create index idx_country_collection_id   on country(collection_id);
 create index idx_period_collection_id    on period(collection_id);
 create index idx_school_collection_id    on school(collection_id);

@@ -39,17 +39,40 @@ model User {
   attachmentsUploaded Attachment[]  @relation("AttachmentUploadedBy")
   mediumsAdded      Medium[]        @relation("MediumAddedBy")
   suggestionsReviewed EditSuggestion[] @relation("SuggestionReviewedBy")
+  collectionAccessGranted   CollectionAccess[] @relation("CollectionAccessUser")
+  collectionAccessGrantedBy CollectionAccess[] @relation("CollectionAccessGrantedBy")
 
   @@map("user")
 }
 
 // =============================================================================
-// Collection (optional grouping — audit fields store names, not User FKs,
-// per the design decision to keep a readable record even if accounts change)
+// Organization (museum/institution — owns one or more Collections)
+// =============================================================================
+
+model Organization {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  websiteUrl    String?   @map("website_url")
+  contactEmail  String?   @map("contact_email")
+  address       String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @map("updated_at")
+
+  collections Collection[]
+
+  @@map("organization")
+}
+
+// =============================================================================
+// Collection (owned by an Organization — audit fields store names, not User
+// FKs, per the design decision to keep a readable record even if accounts
+// change)
 // =============================================================================
 
 model Collection {
   id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
   collectionName  String    @map("collection_name")
   type            String    @default("private") // "public" | "private"
   createdByName   String    @map("created_by_name")
@@ -57,13 +80,37 @@ model Collection {
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime? @map("updated_at")
 
+  organization Organization @relation(fields: [organizationId], references: [id])
   countries Country[]
   periods   Period[]
   schools   School[]
   artists   Artist[]
   artifacts Artifact[]
+  accessGrants CollectionAccess[]
 
   @@map("collection")
+}
+
+// =============================================================================
+// CollectionAccess (join table — grants a User "view" or "manage" access to a
+// private Collection; see Section 2.4.2 of the Design Document. Admins bypass
+// this table entirely in application logic and can always see everything.)
+// =============================================================================
+
+model CollectionAccess {
+  id            String   @id @default(uuid()) @db.Uuid
+  collectionId  String   @map("collection_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  accessLevel   String   @map("access_level") // "view" | "manage"
+  grantedBy     String?  @map("granted_by") @db.Uuid
+  grantedAt     DateTime @default(now()) @map("granted_at")
+
+  collection      Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  user            User       @relation("CollectionAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantedByUser   User?      @relation("CollectionAccessGrantedBy", fields: [grantedBy], references: [id])
+
+  @@unique([collectionId, userId])
+  @@map("collection_access")
 }
 
 // =============================================================================
