@@ -161,18 +161,14 @@ export function MuseumForm({
       {renderField('Contact email', 'contactEmail', 'email')}
       {renderField('Address', 'address', 'text')}
 
-      {isExisting && museum && (
+      {isExisting && isEditing && museum && (
         <div className={styles.audit}>
-          <div className={styles.auditRow}>
-            <span className={styles.auditLabel}>Created</span>
-            <span className={styles.auditValue}>{formatTimestamp(museum.createdAt)}</span>
-          </div>
-          <div className={styles.auditRow}>
-            <span className={styles.auditLabel}>Last updated</span>
-            <span className={styles.auditValue}>
-              {museum.updatedAt ? formatTimestamp(museum.updatedAt) : 'Never edited'}
-            </span>
-          </div>
+          <p className={styles.auditLine}>
+            <span className={styles.auditLabel}>Created</span> {formatTimestamp(museum.createdAt)}
+            {' · '}
+            <span className={styles.auditLabel}>Updated</span>{' '}
+            {museum.updatedAt ? formatTimestamp(museum.updatedAt) : 'Never edited'}
+          </p>
         </div>
       )}
 

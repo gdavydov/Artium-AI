@@ -238,11 +238,11 @@
   border: 1px solid var(--panel-line);
   border-radius: 4px;
 }
-.auditRow {
-  display: grid;
-  grid-template-columns: 7rem 1fr;
-  gap: 0.5rem;
-  padding: 0.2rem 0;
+.auditLine {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink);
+  line-height: 1.5;
 }
 .auditLabel {
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -250,10 +250,6 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-soft);
-}
-.auditValue {
-  font-size: 0.85rem;
-  color: var(--ink);
 }
 
 .submit {

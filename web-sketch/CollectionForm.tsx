@@ -289,26 +289,17 @@ export function CollectionForm({
         </div>
       </div>
 
-      {isExisting && collection && (
+      {isExisting && isEditing && collection && (
         <div className={styles.audit}>
-          <div className={styles.auditRow}>
-            <span className={styles.auditLabel}>Created by</span>
-            <span className={styles.auditValue}>{collection.createdByName}</span>
-          </div>
-          <div className={styles.auditRow}>
-            <span className={styles.auditLabel}>Created</span>
-            <span className={styles.auditValue}>{formatTimestamp(collection.createdAt)}</span>
-          </div>
-          <div className={styles.auditRow}>
-            <span className={styles.auditLabel}>Updated by</span>
-            <span className={styles.auditValue}>{collection.updatedByName ?? 'Never edited'}</span>
-          </div>
-          <div className={styles.auditRow}>
-            <span className={styles.auditLabel}>Last updated</span>
-            <span className={styles.auditValue}>
-              {collection.updatedAt ? formatTimestamp(collection.updatedAt) : 'Never edited'}
-            </span>
-          </div>
+          <p className={styles.auditLine}>
+            <span className={styles.auditLabel}>Created</span> by {collection.createdByName} on{' '}
+            {formatTimestamp(collection.createdAt)}
+            {' · '}
+            <span className={styles.auditLabel}>Updated</span>{' '}
+            {collection.updatedAt
+              ? `by ${collection.updatedByName} on ${formatTimestamp(collection.updatedAt)}`
+              : 'Never edited'}
+          </p>
         </div>
       )}
 
