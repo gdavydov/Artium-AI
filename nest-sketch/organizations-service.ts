@@ -7,6 +7,11 @@
 // until the first edit, then is stamped here on every subsequent update.
 // Same audit-timestamp pattern already used by Collection (see
 // Design Document Section 2.4).
+//
+// Access control: only Admin and Curator may create/edit Organization
+// records — Contributors cannot (see the resolver below and Section 3.2's
+// permission matrix). This service itself is role-agnostic; the resolver's
+// @Roles guard is the actual enforcement point.
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
@@ -84,16 +89,17 @@ export class OrganizationsService {
 //     return this.organizations.list();
 //   }
 //
-//   // Staff-only: only Admins manage Organization records (Section 3.2 permission matrix)
+//   // Admin + Curator only — Contributors cannot create/edit Organization
+//   // records (Section 3.2 permission matrix)
 //   @UseGuards(JwtAuthGuard, RolesGuard)
-//   @Roles('admin')
+//   @Roles('admin', 'curator')
 //   @Mutation(() => Organization)
 //   createOrganization(@Args('input') input: OrganizationInput) {
 //     return this.organizations.create(input);
 //   }
 //
 //   @UseGuards(JwtAuthGuard, RolesGuard)
-//   @Roles('admin')
+//   @Roles('admin', 'curator')
 //   @Mutation(() => Organization)
 //   updateOrganization(
 //     @Args('id') id: string,

@@ -273,6 +273,11 @@ explicitly granted access (Section 2.4.2).
 - A single-museum deployment simply has one `Organization` row; the model is
   ready for a multi-museum deployment (e.g. a shared platform hosting several
   institutions' catalogs) without further schema changes.
+- Only **Admin** and **Curator** roles may create or edit an `Organization`
+  record — Contributors cannot (see Section 3.2's permission matrix). A single
+  Create/Edit form is used for both actions (Section 2.4.1 has no separate
+  "create" vs. "edit" screen); `created_at`/`updated_at` are never exposed as
+  editable fields on it regardless of role.
 
 #### 2.4.2 Private Collection Access (Security)
 
@@ -414,6 +419,7 @@ Only staff have logins, via a single shared login page:
 | View a `private` Collection's contents | ✅ (always) | Only if granted `view`/`manage` via `CollectionAccess` | Only if granted `view`/`manage` via `CollectionAccess` | ❌ |
 | Manage a `private` Collection (metadata, tagged records) | ✅ (always) | Only if granted `manage` via `CollectionAccess` | Only if granted `manage` via `CollectionAccess` | ❌ |
 | Grant/revoke `CollectionAccess` | ✅ | ✅ (for Collections they themselves have `manage` on) | ❌ | ❌ |
+| Create/edit Organization (museum) records | ✅ | ✅ | ❌ | ❌ |
 
 ### 3.3 Public Edit Suggestions (Wiki-style Workflow)
 
