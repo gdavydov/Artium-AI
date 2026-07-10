@@ -1,11 +1,20 @@
 // web-sketch/MuseumForm.tsx
 //
-// Create/Edit form for Organization (museum/institution) records.
+// Single page for both creating and viewing/editing an Organization (museum)
+// record — no separate Create/Edit screens.
 //
-// created_at and updated_at are never rendered as editable inputs — they
-// aren't user data, they're audit metadata. created_at is populated once by
-// the database default (see schema.sql: `default now()`) and is never sent
-// by this form on either create or edit. updated_at is stamped by the
+//   - No existing record (museum undefined): the form opens directly in
+//     edit mode, since there's nothing yet to view. Submit reads "Create Museum".
+//   - Existing record: opens read-only. If canEdit is true (caller decides
+//     this from the current user's role — Admin/Curator only, Contributors
+//     excluded, see Design Document Section 3.2), a pencil icon appears at
+//     the end of the title; clicking it switches the same fields to
+//     editable in place. Submit then reads "Save Changes".
+//
+// created_at and updated_at are never rendered as editable inputs, in
+// either mode — they aren't user data, they're audit metadata. created_at
+// is populated once by the database default (see schema.sql: `default
+// now()`) and is never sent by this form. updated_at is stamped by the
 // backend service on every edit (see nest-sketch/organizations-service.ts)
 // and shown here read-only, once it exists.
 
@@ -48,18 +57,59 @@ function formatTimestamp(iso: string): string {
   });
 }
 
+function PencilIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+      <path
+        d="M13.5 3.5l3 3L6 17H3v-3L13.5 3.5z"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function MuseumForm({
   museum,
+  canEdit,
   onSubmit,
+  onNavigateToCollection,
 }: {
-  museum?: MuseumRecord; // absent = create mode, present = edit mode
+  museum?: MuseumRecord; // absent = no record yet, form opens directly editable
+  canEdit: boolean; // computed by the caller from the user's role (Admin/Curator only)
   onSubmit: (values: MuseumFormValues) => void;
+  onNavigateToCollection?: () => void;
 }) {
-  const isEditMode = Boolean(museum);
+  const isExisting = Boolean(museum);
+  const [isEditing, setIsEditing] = useState(!isExisting);
   const [values, setValues] = useState<MuseumFormValues>(toFormValues(museum));
+
+  const readOnly = isExisting && !isEditing;
 
   function update<K extends keyof MuseumFormValues>(key: K, value: MuseumFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function renderField(labelText: string, key: keyof MuseumFormValues, inputType: string, placeholder?: string) {
+    return (
+      <label className={styles.field}>
+        <span className={styles.label}>{labelText}</span>
+        {readOnly ? (
+          <span className={styles.readOnlyValue}>{values[key] || '—'}</span>
+        ) : (
+          <input
+            className={styles.input}
+            type={inputType}
+            required={key === 'name'}
+            placeholder={placeholder}
+            value={values[key]}
+            onChange={(e) => update(key, e.target.value)}
+          />
+        )}
+      </label>
+    );
   }
 
   return (
@@ -70,61 +120,48 @@ export function MuseumForm({
         onSubmit(values);
       }}
     >
-      <h1 className={styles.title}>{isEditMode ? 'Edit Museum' : 'Create Museum'}</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>
+          Museum
+          {isExisting && canEdit && !isEditing && (
+            <button
+              type="button"
+              className={styles.editIcon}
+              onClick={() => setIsEditing(true)}
+              aria-label="Edit museum details"
+            >
+              <PencilIcon />
+            </button>
+          )}
+        </h1>
+        {onNavigateToCollection && (
+          <button type="button" className={styles.navButton} onClick={onNavigateToCollection}>
+            Collection
+          </button>
+        )}
+      </div>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Name</span>
-        <input
-          className={styles.input}
-          type="text"
-          required
-          value={values.name}
-          onChange={(e) => update('name', e.target.value)}
-        />
-      </label>
+      {renderField('Name', 'name', 'text')}
 
       <label className={styles.field}>
         <span className={styles.label}>Description</span>
-        <textarea
-          className={styles.textarea}
-          rows={4}
-          value={values.description}
-          onChange={(e) => update('description', e.target.value)}
-        />
+        {readOnly ? (
+          <span className={styles.readOnlyValue}>{values.description || '—'}</span>
+        ) : (
+          <textarea
+            className={styles.textarea}
+            rows={4}
+            value={values.description}
+            onChange={(e) => update('description', e.target.value)}
+          />
+        )}
       </label>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Website</span>
-        <input
-          className={styles.input}
-          type="url"
-          placeholder="https://"
-          value={values.websiteUrl}
-          onChange={(e) => update('websiteUrl', e.target.value)}
-        />
-      </label>
+      {renderField('Website', 'websiteUrl', 'url', 'https://')}
+      {renderField('Contact email', 'contactEmail', 'email')}
+      {renderField('Address', 'address', 'text')}
 
-      <label className={styles.field}>
-        <span className={styles.label}>Contact email</span>
-        <input
-          className={styles.input}
-          type="email"
-          value={values.contactEmail}
-          onChange={(e) => update('contactEmail', e.target.value)}
-        />
-      </label>
-
-      <label className={styles.field}>
-        <span className={styles.label}>Address</span>
-        <input
-          className={styles.input}
-          type="text"
-          value={values.address}
-          onChange={(e) => update('address', e.target.value)}
-        />
-      </label>
-
-      {isEditMode && museum && (
+      {isExisting && museum && (
         <div className={styles.audit}>
           <div className={styles.auditRow}>
             <span className={styles.auditLabel}>Created</span>
@@ -139,9 +176,11 @@ export function MuseumForm({
         </div>
       )}
 
-      <button type="submit" className={styles.submit}>
-        {isEditMode ? 'Save Changes' : 'Create Museum'}
-      </button>
+      {!readOnly && (
+        <button type="submit" className={styles.submit}>
+          {isExisting ? 'Save Changes' : 'Create Museum'}
+        </button>
+      )}
     </form>
   );
 }

@@ -1,6 +1,6 @@
-/* web-sketch/MuseumForm.module.css
+/* web-sketch/CollectionForm.module.css
  *
- * Same warm-stone/oxblood/verdigris tokens as ArtifactPage/AboutArtistPage.
+ * Same warm-stone/oxblood/verdigris tokens as MuseumForm/ArtifactPage.
  */
 
 .form {
@@ -94,33 +94,6 @@
   outline-offset: 2px;
 }
 
-.navButton {
-  flex: none;
-  padding: 0.4rem 0.9rem;
-  font: inherit;
-  font-size: 0.85rem;
-  color: var(--ink);
-  background: var(--panel);
-  border: 1px solid var(--panel-line);
-  border-radius: 4px;
-  cursor: pointer;
-}
-.navButton:hover {
-  border-color: var(--verdigris);
-  color: var(--verdigris);
-}
-.navButton:focus-visible {
-  outline: 2px solid var(--verdigris);
-  outline-offset: 2px;
-}
-
-.readOnlyValue {
-  font-size: 0.95rem;
-  color: var(--ink);
-  padding: 0.5rem 0.65rem;
-  white-space: pre-wrap;
-}
-
 .field {
   display: flex;
   flex-direction: column;
@@ -135,8 +108,7 @@
   color: var(--ink-soft);
 }
 
-.input,
-.textarea {
+.input {
   font: inherit;
   font-size: 0.95rem;
   color: var(--ink);
@@ -145,17 +117,64 @@
   border-radius: 4px;
   padding: 0.5rem 0.65rem;
 }
-.input:focus,
-.textarea:focus {
+.input:focus {
   outline: none;
   border-color: var(--verdigris);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--verdigris) 25%, transparent);
 }
 
-.textarea {
-  resize: vertical;
-  font-family: Charter, Georgia, serif;
-  line-height: 1.5;
+.readOnlyValue {
+  font-size: 0.95rem;
+  color: var(--ink);
+  padding: 0.5rem 0.65rem;
+  text-transform: none;
+}
+
+.newPeriod {
+  margin-top: 0.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background: var(--panel);
+  border: 1px dashed var(--panel-line);
+  border-radius: 4px;
+}
+.newPeriodYears {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+.newPeriodActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.smallButton,
+.smallButtonSecondary {
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.smallButton {
+  color: #f6f3ec;
+  background: var(--verdigris);
+  border: none;
+}
+.smallButton:hover {
+  filter: brightness(1.08);
+}
+.smallButtonSecondary {
+  color: var(--ink-soft);
+  background: transparent;
+  border: 1px solid var(--panel-line);
+}
+.smallButtonSecondary:hover {
+  color: var(--ink);
+  border-color: var(--ink-soft);
 }
 
 .audit {
