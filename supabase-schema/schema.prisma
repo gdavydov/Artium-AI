@@ -85,7 +85,7 @@ model Collection {
   periods   Period[]
   schools   School[]
   artists   Artist[]
-  artifacts Artifact[]
+  artifactTags ArtifactCollection[]
   accessGrants CollectionAccess[]
 
   @@map("collection")
@@ -205,7 +205,6 @@ model Artifact {
   artistId      String?  @map("artist_id") @db.Uuid  // nullable (unattributed works)
   periodId      String   @map("period_id") @db.Uuid
   schoolId      String?  @map("school_id") @db.Uuid  // nullable, independent of artist
-  collectionId  String?  @map("collection_id") @db.Uuid // nullable
   createdBy     String   @map("created_by") @db.Uuid
   status        String   @default("draft") // "draft" | "published"
 
@@ -213,11 +212,31 @@ model Artifact {
   artist      Artist?      @relation(fields: [artistId], references: [id])
   period      Period       @relation(fields: [periodId], references: [id])
   school      School?      @relation(fields: [schoolId], references: [id])
-  collection  Collection?  @relation(fields: [collectionId], references: [id])
   createdByUser User       @relation("ArtifactCreatedBy", fields: [createdBy], references: [id])
   attachments Attachment[]
+  collectionTags ArtifactCollection[]
 
   @@map("artifact")
+}
+
+// =============================================================================
+// ArtifactCollection (join table — an Artifact can belong to any number of
+// Collections at once; see Section 2.4.3 of the Design Document. Unlike
+// Artist/School/Period/Country's single nullable collectionId, this is a true
+// many-to-many relationship.)
+// =============================================================================
+
+model ArtifactCollection {
+  id            String   @id @default(uuid()) @db.Uuid
+  artifactId    String   @map("artifact_id") @db.Uuid
+  collectionId  String   @map("collection_id") @db.Uuid
+  addedAt       DateTime @default(now()) @map("added_at")
+
+  artifact   Artifact   @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([artifactId, collectionId])
+  @@map("artifact_collection")
 }
 
 // =============================================================================

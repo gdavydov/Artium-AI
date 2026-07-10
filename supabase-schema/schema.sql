@@ -138,9 +138,23 @@ create table artifact (
   artist_id      uuid references artist(id),        -- nullable (unattributed works)
   period_id      uuid not null references period(id),
   school_id      uuid references school(id),         -- nullable, independent of artist
-  collection_id  uuid references collection(id),     -- nullable
   created_by     uuid not null references "user"(id),
   status         text not null default 'draft' check (status in ('draft', 'published'))
+);
+
+-- =============================================================================
+-- ArtifactCollection (join table — an Artifact can belong to any number of
+-- Collections at once; see Section 2.4.3 of the Design Document. Unlike
+-- Artist/School/Period/Country's single nullable collection_id, this is a
+-- true many-to-many relationship.)
+-- =============================================================================
+
+create table artifact_collection (
+  id             uuid primary key default gen_random_uuid(),
+  artifact_id    uuid not null references artifact(id) on delete cascade,
+  collection_id  uuid not null references collection(id) on delete cascade,
+  added_at       timestamptz not null default now(),
+  unique (artifact_id, collection_id)
 );
 
 -- =============================================================================
@@ -196,9 +210,10 @@ create index idx_artifact_medium_id      on artifact(medium_id);
 create index idx_artifact_artist_id      on artifact(artist_id);
 create index idx_artifact_period_id      on artifact(period_id);
 create index idx_artifact_school_id      on artifact(school_id);
-create index idx_artifact_collection_id  on artifact(collection_id);
 create index idx_artifact_created_by     on artifact(created_by);
 create index idx_artifact_status         on artifact(status);
+create index idx_artifact_collection_artifact_id   on artifact_collection(artifact_id);
+create index idx_artifact_collection_collection_id on artifact_collection(collection_id);
 create index idx_attachment_artifact_id  on attachment(artifact_id);
 create index idx_attachment_uploaded_by  on attachment(uploaded_by);
 create index idx_edit_suggestion_entity  on edit_suggestion(entity_type, entity_id);

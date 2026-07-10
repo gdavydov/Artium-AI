@@ -25,10 +25,11 @@ codebase
 
 | Entity | Description |
 |---|---|
-| **Artifact** | A single museum object/artwork. Has a description, a Medium (controlled list), a Location (free text — e.g. current gallery/display location), an optional Collection reference, and links to Artist, Period, and (optionally) School. |
+| **Artifact** | A single museum object/artwork. Has a description, a Medium (controlled list), a Location (free text — e.g. current gallery/display location), can belong to any number of Collections (many-to-many, see Section 2.4.3), and links to Artist, Period, and (optionally) School. |
 | **Organization** | A museum/institution record. Owns one or more Collections (required, one-to-many) — every Collection belongs to exactly one Organization. |
-| **Collection** | A named grouping (e.g. a specific exhibit, donor collection, or curatorial sub-collection), owned by exactly one Organization, that Artifact, Artist, School, Period, or Country records may optionally belong to. Marked `public` or `private` to control catalog visibility; `private` Collections are visible only to Admins and to users explicitly granted access (see Section 2.4.1). |
+| **Collection** | A named grouping (e.g. a specific exhibit, donor collection, or curatorial sub-collection), owned by exactly one Organization, that Artifact records may belong to (many-to-many) and that Artist, School, Period, or Country records may optionally belong to (one-to-many). Marked `public` or `private` to control catalog visibility; `private` Collections are visible only to Admins and to users explicitly granted access (see Section 2.4.2). |
 | **CollectionAccess** | Join table granting a specific staff User `view` or `manage` access to a specific `private` Collection. Admins bypass this check entirely and can always see everything. |
+| **ArtifactCollection** | Join table linking an Artifact to a Collection (many-to-many) — an Artifact may belong to zero, one, or several Collections at once. See Section 2.4.3. |
 | **Medium** | A controlled vocabulary of materials/techniques (e.g. "oil on canvas," "marble," "bronze"). Any staff role may add a new entry if the one needed doesn't exist yet; entries can be deactivated (not deleted) to retire duplicates. |
 | **Artist** | Creator of one or more artifacts. Has an optional embedded portrait image. Links to Country and Period, and optionally to School and Collection. |
 | **School** | An artistic school/movement (e.g. "Venetian School"). Has a list of associated Artists, and can also be attached directly to an Artifact when no specific artist is known. May optionally belong to a Collection. |
@@ -44,7 +45,8 @@ codebase
   artist unknown" style attribution)
 - `Artifact → Medium` (required, controlled list — see Section 2.6)
 - `Artifact → Attachment` (one-to-many)
-- `Artifact → Collection` (optional — see Section 2.4)
+- `Artifact → Collection` (many-to-many, via `ArtifactCollection` — an Artifact
+  may belong to any number of Collections at once; see Section 2.4.3)
 - `Artist → Country`
 - `Artist → Period`
 - `Artist → School`
@@ -55,7 +57,7 @@ codebase
 - `Organization → Collection` (required, one-to-many — every Collection belongs to exactly
   one Organization; see Section 2.4)
 - `Collection → User` (many-to-many, via `CollectionAccess` — grants specific users
-  `view`/`manage` access to a `private` Collection; see Section 2.4.1)
+  `view`/`manage` access to a `private` Collection; see Section 2.4.2)
 
 This produces a hub-and-spoke browsing pattern: from any Artifact, a visitor can reach
 its Artist, Period, or School; from any Artist, Period, School, or Country page, a
@@ -71,7 +73,8 @@ erDiagram
   ARTIFACT }o--o| SCHOOL : "attributed to (optional)"
   ARTIFACT }o--|| MEDIUM : "made of"
   ARTIFACT ||--o{ ATTACHMENT : has
-  ARTIFACT }o--o| COLLECTION : "belongs to (optional)"
+  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
+  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
   ARTIST }o--|| COUNTRY : "from"
   ARTIST }o--|| PERIOD : "active in"
   ARTIST }o--|| SCHOOL : "trained in"
@@ -103,9 +106,14 @@ erDiagram
     uuid artist_id FK "nullable"
     uuid period_id FK
     uuid school_id FK "nullable"
-    uuid collection_id FK "nullable"
     uuid created_by FK
     string status "draft, published"
+  }
+  ARTIFACT_COLLECTION {
+    uuid id PK
+    uuid artifact_id FK
+    uuid collection_id FK
+    timestamp added_at
   }
   COLLECTION {
     uuid id PK
@@ -238,17 +246,20 @@ explicitly granted access (Section 2.4.2).
   member); `updated_by_name` and `updated_at` remain `NULL` until the Collection is
   edited for the first time, at which point they're set and updated on every
   subsequent edit.
-- `Artifact`, `Artist`, `School`, `Period`, and `Country` each carry a **nullable**
+- `Artist`, `School`, `Period`, and `Country` each carry a **nullable**
   `collection_id`. A record with no collection assigned (`collection_id = NULL`)
   behaves exactly as it does today — Collection is purely additive, not a
-  required classification.
+  required classification. `Artifact` is the one exception: it links to
+  Collection via the `ArtifactCollection` join table instead of its own
+  `collection_id` column, since an Artifact can belong to more than one
+  Collection at once (Section 2.4.3).
 - A Collection can span across entity types — for example, an exhibit collection
-  could include specific Artifacts, the Artists behind them, and the Period they
-  belong to, all tagged with the same `collection_id`, enabling a single "view this
-  exhibit" query across otherwise unrelated entity tables.
-- No cross-entity referential constraint links these five `collection_id` columns
-  to each other beyond sharing the same `Collection.id` — each is an independent,
-  optional foreign key.
+  could include specific Artifacts (via `ArtifactCollection`), the Artists
+  behind them, and the Period they belong to (via `collection_id`), enabling a
+  single "view this exhibit" query across otherwise unrelated entity tables.
+- No cross-entity referential constraint links these `collection_id` columns
+  (or `ArtifactCollection` rows) to each other beyond sharing the same
+  `Collection.id` — each is an independent, optional link.
 
 #### 2.4.1 Organization Ownership
 
@@ -289,15 +300,42 @@ member — visibility is controlled explicitly:
     User — who granted it), `granted_at` (timestamp). A unique constraint on
     (`collection_id`, `user_id`) means one row per user per Collection; the
     access level is updated in place rather than adding a second row.
-- Since Artifact/Artist/School/Period/Country records can be tagged to a
-  Collection via their own optional `collection_id`, a record tagged to a
-  `private` Collection inherits that Collection's visibility rule — it's hidden
-  from the public catalog and from staff without access, exactly as if the
-  Collection itself were being viewed directly.
+- Since Artist/School/Period/Country records can be tagged to a Collection via
+  their own optional `collection_id`, a record tagged to a `private` Collection
+  inherits that Collection's visibility rule — it's hidden from the public
+  catalog and from staff without access, exactly as if the Collection itself
+  were being viewed directly.
+- Artifact is a many-to-many case (Section 2.4.3) rather than a single nullable
+  FK, so its rule is evaluated per-Artifact across *all* of its tagged
+  Collections: an Artifact is visible if it is untagged, tagged to at least one
+  `public` Collection, or the viewer (or Admin) has `view`/`manage` access to at
+  least one `private` Collection it's tagged to. An Artifact only stays hidden
+  if every Collection it's tagged to is `private` and the viewer lacks access
+  to all of them.
 - This is an **application-layer** access-control rule (enforced in the API,
-  e.g. as a `WHERE` clause added to every Collection/tagged-record query based
-  on the caller's role and `CollectionAccess` grants), not a database-level
-  constraint — the schema only stores the grants themselves.
+  e.g. as a `WHERE`/`EXISTS` clause added to every Collection/tagged-record
+  query based on the caller's role and `CollectionAccess` grants), not a
+  database-level constraint — the schema only stores the grants themselves.
+
+#### 2.4.3 Artifact ↔ Collection (Many-to-Many)
+
+Unlike Artist/School/Period/Country — which each carry a single nullable
+`collection_id` — an Artifact can belong to **any number of Collections at
+once** (e.g. a painting that's part of both a "Renaissance Highlights"
+exhibit and a donor's named collection simultaneously).
+
+- `ArtifactCollection` is the join table: `id` (UUID), `artifact_id` (FK →
+  Artifact), `collection_id` (FK → Collection), `added_at` (timestamp). A
+  unique constraint on (`artifact_id`, `collection_id`) prevents tagging the
+  same Artifact into the same Collection twice.
+- Artifact itself has **no** `collection_id` column — membership is expressed
+  entirely through `ArtifactCollection` rows. An Artifact with zero rows is
+  untagged and behaves exactly as before (fully visible, not part of any
+  Collection).
+- This mirrors the single-museum-with-multiple-collections structure at the
+  Organization level (Section 2.4.1): just as one Organization owns many
+  Collections, one Artifact can be tagged into many Collections — the two
+  many/one-to-many relationships compose rather than conflict.
 
 ### 2.5 Artist Portrait (Embedded Image — Exception to Section 6 Storage Principle)
 
@@ -878,7 +916,8 @@ erDiagram
   ARTIFACT }o--o| SCHOOL : "attributed to (optional)"
   ARTIFACT }o--|| MEDIUM : "made of"
   ARTIFACT ||--o{ ATTACHMENT : has
-  ARTIFACT }o--o| COLLECTION : "belongs to (optional)"
+  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
+  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
   ARTIST }o--|| COUNTRY : "from"
   ARTIST }o--|| PERIOD : "active in"
   ARTIST }o--|| SCHOOL : "trained in"
@@ -910,9 +949,14 @@ erDiagram
     uuid artist_id FK "nullable"
     uuid period_id FK
     uuid school_id FK "nullable"
-    uuid collection_id FK "nullable"
     uuid created_by FK
     string status "draft, published"
+  }
+  ARTIFACT_COLLECTION {
+    uuid id PK
+    uuid artifact_id FK
+    uuid collection_id FK
+    timestamp added_at
   }
   COLLECTION {
     uuid id PK
@@ -1016,7 +1060,7 @@ erDiagram
 
 ```mermaid
 erDiagram
-  COLLECTION ||--o{ ARTIFACT : "optionally groups"
+  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
   COLLECTION ||--o{ ARTIST : "optionally groups"
   COLLECTION ||--o{ SCHOOL : "optionally groups"
   COLLECTION ||--o{ PERIOD : "optionally groups"
@@ -1055,7 +1099,7 @@ erDiagram
   ARTIFACT }o--|| PERIOD : "belongs to"
   ARTIFACT }o--o| SCHOOL : "attributed to (optional)"
   ARTIFACT }o--|| MEDIUM : "made of"
-  ARTIFACT }o--o| COLLECTION : "belongs to (optional)"
+  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
   ARTIFACT ||--o{ ATTACHMENT : has
   ARTIFACT }o--|| USER : "created by"
 ```
@@ -1070,9 +1114,11 @@ erDiagram
 | artist_id | UUID (FK → Artist) | Yes | Creator, if known |
 | period_id | UUID (FK → Period) | No | Historical/artistic period |
 | school_id | UUID (FK → School) | Yes | Direct school attribution, independent of Artist |
-| collection_id | UUID (FK → Collection) | Yes | Optional grouping (exhibit, donor collection, etc.) |
 | created_by | UUID (FK → User) | No | Staff member who created the record |
 | status | String | No | `draft` or `published` |
+
+Collection membership is no longer a field on Artifact — see `ArtifactCollection`
+(Section 2.4.3, Appendix A.14) for the many-to-many join.
 
 ### A.3 Artist
 
@@ -1291,3 +1337,28 @@ erDiagram
 Note: a unique constraint on (`collection_id`, `user_id`) ensures at most one
 grant row per user per Collection — re-granting updates `access_level` in place
 rather than inserting a second row.
+
+### A.14 ArtifactCollection
+
+```mermaid
+erDiagram
+  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
+  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
+
+  ARTIFACT_COLLECTION {
+    uuid id PK
+    uuid artifact_id FK
+    uuid collection_id FK
+    timestamp added_at
+  }
+```
+
+| Field | Type | Nullable | Description |
+|---|---|---|---|
+| id | UUID (PK) | No | Primary key |
+| artifact_id | UUID (FK → Artifact) | No | The Artifact being tagged |
+| collection_id | UUID (FK → Collection) | No | The Collection it's tagged into |
+| added_at | Timestamp | No | When the Artifact was added to the Collection |
+
+Note: a unique constraint on (`artifact_id`, `collection_id`) prevents
+duplicate tags — see Section 2.4.3.
