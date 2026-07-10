@@ -17,6 +17,12 @@
 // Period via the "+ Add new period" option, which is persisted via
 // onCreatePeriod before being selected — no schema change needed.
 //
+// Artists: same one-to-many pattern as Period — Artist.collection_id is
+// optional (Section 2.4), so this is the list of Artists currently tagged to
+// this Collection, shown as thumbnail + name in both view and edit mode.
+// "Add Artist" only appears in edit mode and hands off to AboutArtistPage
+// (via onAddArtist) rather than duplicating artist-creation UI here.
+//
 // created_at/updated_at and created_by_name/updated_by_name are never
 // editable inputs, in either mode — see nest-sketch/collections-service.ts
 // for where they're actually populated.
@@ -31,6 +37,12 @@ export interface PeriodOption {
   name: string;
   startYear: number;
   endYear: number;
+}
+
+export interface ArtistThumbnail {
+  id: string;
+  name: string;
+  portraitImageUrl?: string;
 }
 
 export interface CollectionRecord {
@@ -84,15 +96,19 @@ function PencilIcon() {
 export function CollectionForm({
   collection,
   periods,
+  artists,
   canEdit,
   onSubmit,
   onCreatePeriod,
+  onAddArtist,
 }: {
   collection?: CollectionRecord;
   periods: PeriodOption[];
+  artists: ArtistThumbnail[];
   canEdit: boolean;
   onSubmit: (values: CollectionFormValues) => void;
   onCreatePeriod: (input: { name: string; startYear: number; endYear: number }) => Promise<PeriodOption>;
+  onAddArtist?: () => void;
 }) {
   const isExisting = Boolean(collection);
   const [isEditing, setIsEditing] = useState(!isExisting);
@@ -253,6 +269,26 @@ export function CollectionForm({
         )}
       </label>
 
+      <div className={styles.field}>
+        <span className={styles.label}>Artists ({artists.length})</span>
+        <div className={styles.artistList}>
+          {artists.map((artist) => (
+            <div key={artist.id} className={styles.artistRow}>
+              <div
+                className={styles.artistThumb}
+                style={
+                  artist.portraitImageUrl
+                    ? { backgroundImage: `url(${artist.portraitImageUrl})` }
+                    : undefined
+                }
+              />
+              <span className={styles.artistName}>{artist.name}</span>
+            </div>
+          ))}
+          {artists.length === 0 && <p className={styles.emptyNote}>No artists tagged yet.</p>}
+        </div>
+      </div>
+
       {isExisting && collection && (
         <div className={styles.audit}>
           <div className={styles.auditRow}>
@@ -274,6 +310,12 @@ export function CollectionForm({
             </span>
           </div>
         </div>
+      )}
+
+      {!readOnly && onAddArtist && (
+        <button type="button" className={styles.addArtistButton} onClick={onAddArtist}>
+          Add Artist
+        </button>
       )}
 
       {!readOnly && (
