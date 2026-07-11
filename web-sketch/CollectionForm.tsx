@@ -188,11 +188,9 @@ export function CollectionForm({
         )}
       </label>
 
-      <label className={styles.field}>
-        <span className={styles.label}>Type</span>
-        {readOnly ? (
-          <span className={styles.readOnlyValue}>{values.type}</span>
-        ) : (
+      {!readOnly && (
+        <label className={styles.field}>
+          <span className={styles.label}>Type</span>
           <select
             className={styles.input}
             value={values.type}
@@ -201,8 +199,8 @@ export function CollectionForm({
             <option value="private">private</option>
             <option value="public">public</option>
           </select>
-        )}
-      </label>
+        </label>
+      )}
 
       <label className={styles.field}>
         <span className={styles.label}>Period</span>
