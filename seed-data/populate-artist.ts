@@ -4,7 +4,7 @@
 // works (with images) from the Metropolitan Museum of Art's Open Access API
 // (no API key required, CC0-licensed images — https://metmuseum.github.io/),
 // uploads each image to object storage (S3/R2, via the same StorageProvider
-// pattern as nest-sketch/storage-provider.ts), and writes the Country / Period /
+// pattern as backend/src/storage/storage.provider.ts), and writes the Country / Period /
 // Artist / Medium / Artifact / Attachment rows via Prisma. Safe to re-run:
 // every entity is looked up before being created.
 //
@@ -118,7 +118,7 @@ function guessContentType(url: string): string {
   return 'image/jpeg';
 }
 
-/** Mirrors nest-sketch/storage-provider.ts's buildKey convention. */
+/** Mirrors backend/src/storage/storage.provider.ts's buildKey convention. */
 function buildKey(artifactId: string, fileName: string): string {
   const safeName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
   return `artifacts/${artifactId}/originals/${safeName}`;
