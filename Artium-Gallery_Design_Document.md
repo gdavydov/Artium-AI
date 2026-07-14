@@ -25,11 +25,8 @@ codebase
 
 | Entity | Description |
 |---|---|
-| **Artifact** | A single museum object/artwork. Has a description, a Medium (controlled list), a Location (free text — e.g. current gallery/display location), can belong to any number of Collections (many-to-many, see Section 2.4.3), and links to Artist, Period, and (optionally) School. |
-| **Organization** | A museum/institution record. Owns one or more Collections (required, one-to-many) — every Collection belongs to exactly one Organization. |
-| **Collection** | A named grouping (e.g. a specific exhibit, donor collection, or curatorial sub-collection), owned by exactly one Organization, that Artifact records may belong to (many-to-many) and that Artist, School, Period, or Country records may optionally belong to (one-to-many). Marked `public` or `private` to control catalog visibility; `private` Collections are visible only to Admins and to users explicitly granted access (see Section 2.4.2). |
-| **CollectionAccess** | Join table granting a specific staff User `view` or `manage` access to a specific `private` Collection. Admins bypass this check entirely and can always see everything. |
-| **ArtifactCollection** | Join table linking an Artifact to a Collection (many-to-many) — an Artifact may belong to zero, one, or several Collections at once. See Section 2.4.3. |
+| **Artifact** | A single museum object/artwork. Has a description, a Medium (controlled list), a Location (free text — e.g. current gallery/display location), an optional Collection reference, and links to Artist, Period, and (optionally) School. |
+| **Collection** | An optional named grouping (e.g. a specific exhibit, donor collection, or curatorial sub-collection) that Artifact, Artist, School, Period, or Country records may optionally belong to. |
 | **Medium** | A controlled vocabulary of materials/techniques (e.g. "oil on canvas," "marble," "bronze"). Any staff role may add a new entry if the one needed doesn't exist yet; entries can be deactivated (not deleted) to retire duplicates. |
 | **Artist** | Creator of one or more artifacts. Has an optional embedded portrait image. Links to Country and Period, and optionally to School and Collection. |
 | **School** | An artistic school/movement (e.g. "Venetian School"). Has a list of associated Artists, and can also be attached directly to an Artifact when no specific artist is known. May optionally belong to a Collection. |
@@ -45,8 +42,7 @@ codebase
   artist unknown" style attribution)
 - `Artifact → Medium` (required, controlled list — see Section 2.6)
 - `Artifact → Attachment` (one-to-many)
-- `Artifact → Collection` (many-to-many, via `ArtifactCollection` — an Artifact
-  may belong to any number of Collections at once; see Section 2.4.3)
+- `Artifact → Collection` (optional — see Section 2.4)
 - `Artist → Country`
 - `Artist → Period`
 - `Artist → School`
@@ -54,10 +50,6 @@ codebase
 - `School → Collection` (optional)
 - `Period → Collection` (optional)
 - `Country → Collection` (optional)
-- `Organization → Collection` (required, one-to-many — every Collection belongs to exactly
-  one Organization; see Section 2.4)
-- `Collection → User` (many-to-many, via `CollectionAccess` — grants specific users
-  `view`/`manage` access to a `private` Collection; see Section 2.4.2)
 
 This produces a hub-and-spoke browsing pattern: from any Artifact, a visitor can reach
 its Artist, Period, or School; from any Artist, Period, School, or Country page, a
@@ -73,8 +65,7 @@ erDiagram
   ARTIFACT }o--o| SCHOOL : "attributed to (optional)"
   ARTIFACT }o--|| MEDIUM : "made of"
   ARTIFACT ||--o{ ATTACHMENT : has
-  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
-  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
+  ARTIFACT }o--o| COLLECTION : "belongs to (optional)"
   ARTIST }o--|| COUNTRY : "from"
   ARTIST }o--|| PERIOD : "active in"
   ARTIST }o--|| SCHOOL : "trained in"
@@ -82,10 +73,6 @@ erDiagram
   SCHOOL }o--o| COLLECTION : "belongs to (optional)"
   PERIOD }o--o| COLLECTION : "belongs to (optional)"
   COUNTRY }o--o| COLLECTION : "belongs to (optional)"
-  ORGANIZATION ||--o{ COLLECTION : "owns"
-  COLLECTION ||--o{ COLLECTION_ACCESS : "grants access via"
-  USER ||--o{ COLLECTION_ACCESS : "granted access to"
-  USER ||--o{ COLLECTION_ACCESS : "granted by (optional)"
   SCHOOL ||--o{ ARTIST : "produced"
   COUNTRY ||--o{ ARTIST : "produced"
   PERIOD ||--o{ ARTIST : "spans"
@@ -106,42 +93,17 @@ erDiagram
     uuid artist_id FK "nullable"
     uuid period_id FK
     uuid school_id FK "nullable"
+    uuid collection_id FK "nullable"
     uuid created_by FK
     string status "draft, published"
   }
-  ARTIFACT_COLLECTION {
-    uuid id PK
-    uuid artifact_id FK
-    uuid collection_id FK
-    timestamp added_at
-  }
   COLLECTION {
     uuid id PK
-    uuid organization_id FK
     string collection_name
-    string type "public or private"
     string created_by_name "full name, not a User FK"
     string updated_by_name "nullable, full name, not a User FK"
     timestamp created_at
     timestamp updated_at "nullable, set on modification"
-  }
-  ORGANIZATION {
-    uuid id PK
-    string name
-    text description "nullable"
-    string website_url "nullable"
-    string contact_email "nullable"
-    string address "nullable"
-    timestamp created_at
-    timestamp updated_at "nullable, set on modification"
-  }
-  COLLECTION_ACCESS {
-    uuid id PK
-    uuid collection_id FK
-    uuid user_id FK
-    string access_level "view or manage"
-    uuid granted_by FK "nullable"
-    timestamp granted_at
   }
   MEDIUM {
     uuid id PK
@@ -215,27 +177,18 @@ erDiagram
 
 ### 2.4 Collections
 
-`Collection` is a named grouping mechanism — distinct from Medium's
+`Collection` is a lightweight, optional grouping mechanism — distinct from Medium's
 controlled-vocabulary pattern (Section 2.6), since a Collection is not a
 classification every record must have, but a way to tag a subset of records as
 belonging to something like a specific exhibit, a donor's gift, or a curatorial
-sub-collection. Unlike Medium, every Collection is owned by exactly one
-`Organization` (Section 2.4.1) and, when `private`, is only visible to staff
-explicitly granted access (Section 2.4.2).
+sub-collection.
 
-- Fields: `id` (UUID), `organization_id` (UUID, required FK → `Organization` —
-  the owning museum/institution), `collection_name`, `type` (`public` or
-  `private`), plus audit fields `created_by_name` (the full name of the staff
-  member who created the Collection, stored as text — not a foreign key to
-  `User`), `updated_by_name` (the full name of whoever last modified it,
-  nullable until a first edit occurs), `created_at`, and `updated_at` (nullable
-  until first modified). Further metadata (dates, curator notes) can be added
-  later without affecting the reference pattern below.
-- `type` is required and constrained to exactly two values: `public` (visible in
-  the Vercel-hosted catalog and to anonymous visitors) or `private` (staff-only,
-  used for in-progress exhibits, internal groupings, or donor collections not yet
-  ready to publish). Defaults to `private` so a newly created Collection isn't
-  exposed before a curator explicitly marks it public.
+- Fields: `id` (UUID), `collection_name`, plus audit fields `created_by_name` (the
+  full name of the staff member who created the Collection, stored as text — not
+  a foreign key to `User`), `updated_by_name` (the full name of whoever last
+  modified it, nullable until a first edit occurs), `created_at`, and `updated_at`
+  (nullable until first modified). Further metadata (dates, curator notes) can be
+  added later without affecting the reference pattern below.
 - `created_by_name` and `updated_by_name` are stored as plain text captured at the
   time of the action, rather than referencing `User.id`. This is a deliberate
   denormalization: it keeps a readable historical record even if the staff
@@ -246,101 +199,17 @@ explicitly granted access (Section 2.4.2).
   member); `updated_by_name` and `updated_at` remain `NULL` until the Collection is
   edited for the first time, at which point they're set and updated on every
   subsequent edit.
-- `Artist`, `School`, `Period`, and `Country` each carry a **nullable**
+- `Artifact`, `Artist`, `School`, `Period`, and `Country` each carry a **nullable**
   `collection_id`. A record with no collection assigned (`collection_id = NULL`)
   behaves exactly as it does today — Collection is purely additive, not a
-  required classification. `Artifact` is the one exception: it links to
-  Collection via the `ArtifactCollection` join table instead of its own
-  `collection_id` column, since an Artifact can belong to more than one
-  Collection at once (Section 2.4.3).
+  required classification.
 - A Collection can span across entity types — for example, an exhibit collection
-  could include specific Artifacts (via `ArtifactCollection`), the Artists
-  behind them, and the Period they belong to (via `collection_id`), enabling a
-  single "view this exhibit" query across otherwise unrelated entity tables.
-- No cross-entity referential constraint links these `collection_id` columns
-  (or `ArtifactCollection` rows) to each other beyond sharing the same
-  `Collection.id` — each is an independent, optional link.
-
-#### 2.4.1 Organization Ownership
-
-- `Organization` models a museum/institution. Fields: `id` (UUID), `name`
-  (required), `description`, `website_url`, `contact_email`, `address` (all
-  nullable free text/metadata), and audit fields `created_at`/`updated_at`.
-- `Collection.organization_id` is a **required** foreign key — every Collection
-  belongs to exactly one Organization; an Organization owns any number of
-  Collections (one-to-many). Unlike `collection_id` on Artifact/Artist/School/
-  Period/Country, this link has no `NULL` case.
-- A single-museum deployment simply has one `Organization` row; the model is
-  ready for a multi-museum deployment (e.g. a shared platform hosting several
-  institutions' catalogs) without further schema changes.
-- Only **Admin** and **Curator** roles may create or edit an `Organization`
-  record — Contributors cannot (see Section 3.2's permission matrix). A single
-  Create/Edit form is used for both actions (Section 2.4.1 has no separate
-  "create" vs. "edit" screen); `created_at`/`updated_at` are never exposed as
-  editable fields on it regardless of role.
-
-#### 2.4.2 Private Collection Access (Security)
-
-A `private` Collection (Section 2.4) is not visible to just any logged-in staff
-member — visibility is controlled explicitly:
-
-- **Admins always see everything.** Regardless of a Collection's `type` or
-  whether any access grant exists, an Admin can view and manage every
-  Collection. This check happens first and short-circuits the rest of the
-  logic below.
-- **Public Collections** (`type = 'public'`) are visible to every staff role and
-  to anonymous public-site visitors, same as content with no Collection at all.
-- **Private Collections** (`type = 'private'`) are visible only to:
-  - the Admin role (see above), and
-  - any User with a matching `CollectionAccess` row for that Collection.
-- `CollectionAccess` is a join table granting a specific `User` either `view` or
-  `manage` access to a specific `private` `Collection`:
-  - `view` — can see the Collection and the Artifacts/Artists/etc. tagged to it.
-  - `manage` — can also edit the Collection's own metadata and change which
-    records are tagged to it. `manage` does not bypass the existing Role
-    permission matrix (Section 3.2) — a Contributor granted `manage` access
-    still can't publish content, for example; the two systems are additive.
-  - Fields: `id` (UUID), `collection_id` (FK → Collection), `user_id` (FK →
-    User), `access_level` (`view` or `manage`), `granted_by` (nullable FK →
-    User — who granted it), `granted_at` (timestamp). A unique constraint on
-    (`collection_id`, `user_id`) means one row per user per Collection; the
-    access level is updated in place rather than adding a second row.
-- Since Artist/School/Period/Country records can be tagged to a Collection via
-  their own optional `collection_id`, a record tagged to a `private` Collection
-  inherits that Collection's visibility rule — it's hidden from the public
-  catalog and from staff without access, exactly as if the Collection itself
-  were being viewed directly.
-- Artifact is a many-to-many case (Section 2.4.3) rather than a single nullable
-  FK, so its rule is evaluated per-Artifact across *all* of its tagged
-  Collections: an Artifact is visible if it is untagged, tagged to at least one
-  `public` Collection, or the viewer (or Admin) has `view`/`manage` access to at
-  least one `private` Collection it's tagged to. An Artifact only stays hidden
-  if every Collection it's tagged to is `private` and the viewer lacks access
-  to all of them.
-- This is an **application-layer** access-control rule (enforced in the API,
-  e.g. as a `WHERE`/`EXISTS` clause added to every Collection/tagged-record
-  query based on the caller's role and `CollectionAccess` grants), not a
-  database-level constraint — the schema only stores the grants themselves.
-
-#### 2.4.3 Artifact ↔ Collection (Many-to-Many)
-
-Unlike Artist/School/Period/Country — which each carry a single nullable
-`collection_id` — an Artifact can belong to **any number of Collections at
-once** (e.g. a painting that's part of both a "Renaissance Highlights"
-exhibit and a donor's named collection simultaneously).
-
-- `ArtifactCollection` is the join table: `id` (UUID), `artifact_id` (FK →
-  Artifact), `collection_id` (FK → Collection), `added_at` (timestamp). A
-  unique constraint on (`artifact_id`, `collection_id`) prevents tagging the
-  same Artifact into the same Collection twice.
-- Artifact itself has **no** `collection_id` column — membership is expressed
-  entirely through `ArtifactCollection` rows. An Artifact with zero rows is
-  untagged and behaves exactly as before (fully visible, not part of any
-  Collection).
-- This mirrors the single-museum-with-multiple-collections structure at the
-  Organization level (Section 2.4.1): just as one Organization owns many
-  Collections, one Artifact can be tagged into many Collections — the two
-  many/one-to-many relationships compose rather than conflict.
+  could include specific Artifacts, the Artists behind them, and the Period they
+  belong to, all tagged with the same `collection_id`, enabling a single "view this
+  exhibit" query across otherwise unrelated entity tables.
+- No cross-entity referential constraint links these five `collection_id` columns
+  to each other beyond sharing the same `Collection.id` — each is an independent,
+  optional foreign key.
 
 ### 2.5 Artist Portrait (Embedded Image — Exception to Section 6 Storage Principle)
 
@@ -415,11 +284,6 @@ Only staff have logins, via a single shared login page:
 | Approve/reject public edit suggestions | ✅ | ✅ | ✅ | ❌ |
 | Delete content | ✅ | ✅ | ❌ | ❌ |
 | Manage users/roles | ✅ | ❌ | ❌ | ❌ |
-| View a `public` Collection's contents | ✅ | ✅ | ✅ | ✅ |
-| View a `private` Collection's contents | ✅ (always) | Only if granted `view`/`manage` via `CollectionAccess` | Only if granted `view`/`manage` via `CollectionAccess` | ❌ |
-| Manage a `private` Collection (metadata, tagged records) | ✅ (always) | Only if granted `manage` via `CollectionAccess` | Only if granted `manage` via `CollectionAccess` | ❌ |
-| Grant/revoke `CollectionAccess` | ✅ | ✅ (for Collections they themselves have `manage` on) | ❌ | ❌ |
-| Create/edit Organization (museum) records | ✅ | ✅ | ❌ | ❌ |
 
 ### 3.3 Public Edit Suggestions (Wiki-style Workflow)
 
@@ -705,6 +569,36 @@ These are set per-environment (development vs. production) in each hosting
 provider's dashboard (Railway/Render for the backend, Vercel for any
 frontend-exposed public config) — never committed to the repository.
 
+### 7.6 Deployment Components Diagram
+
+![Deployment Components Diagram](components.png)
+
+**Why a separate backend host (Railway) is needed alongside Vercel:**
+
+Vercel specializes in serverless/edge functions — short-lived, stateless bursts
+of code triggered per request, then torn down. The NestJS API is not that kind
+of workload:
+
+- It's a **long-running server process** — Nest sets up middleware, route
+  handlers, and dependency injection once at startup, then keeps running to
+  handle many requests efficiently, rather than being rebuilt fresh per request.
+- It needs a **persistent database connection pool**. Prisma opens and reuses a
+  pool of connections to Supabase; a serverless function spinning up and tearing
+  down per request would instead open and close connections constantly — slow,
+  and a real risk of exhausting Supabase's connection limit under load (part of
+  why the PgBouncer pooler in Section 7.2 exists in the first place).
+- WebSockets, background jobs, or other stateful features (if added later)
+  don't fit the serverless model well either.
+
+Railway runs the NestJS app as a normal, continuously running server —
+comparable to a small VM, but managed (deploys via `git push`, no manual OS
+patching). It stays "on," keeps database connections warm, and behaves the way
+backend code is designed to. Vercel and Railway are solving two genuinely
+different problems (serving a frontend vs. running a persistent backend), not
+overlapping ones — Supabase and R2 are pure data stores that still need
+*something* stateful in front of them making the actual API calls, and Railway
+is that piece.
+
 ---
 
 ## 8. Private Deployment Variant
@@ -922,8 +816,7 @@ erDiagram
   ARTIFACT }o--o| SCHOOL : "attributed to (optional)"
   ARTIFACT }o--|| MEDIUM : "made of"
   ARTIFACT ||--o{ ATTACHMENT : has
-  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
-  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
+  ARTIFACT }o--o| COLLECTION : "belongs to (optional)"
   ARTIST }o--|| COUNTRY : "from"
   ARTIST }o--|| PERIOD : "active in"
   ARTIST }o--|| SCHOOL : "trained in"
@@ -931,10 +824,6 @@ erDiagram
   SCHOOL }o--o| COLLECTION : "belongs to (optional)"
   PERIOD }o--o| COLLECTION : "belongs to (optional)"
   COUNTRY }o--o| COLLECTION : "belongs to (optional)"
-  ORGANIZATION ||--o{ COLLECTION : "owns"
-  COLLECTION ||--o{ COLLECTION_ACCESS : "grants access via"
-  USER ||--o{ COLLECTION_ACCESS : "granted access to"
-  USER ||--o{ COLLECTION_ACCESS : "granted by (optional)"
   SCHOOL ||--o{ ARTIST : "produced"
   COUNTRY ||--o{ ARTIST : "produced"
   PERIOD ||--o{ ARTIST : "spans"
@@ -955,42 +844,17 @@ erDiagram
     uuid artist_id FK "nullable"
     uuid period_id FK
     uuid school_id FK "nullable"
+    uuid collection_id FK "nullable"
     uuid created_by FK
     string status "draft, published"
   }
-  ARTIFACT_COLLECTION {
-    uuid id PK
-    uuid artifact_id FK
-    uuid collection_id FK
-    timestamp added_at
-  }
   COLLECTION {
     uuid id PK
-    uuid organization_id FK
     string collection_name
-    string type "public or private"
     string created_by_name "full name, not a User FK"
     string updated_by_name "nullable, full name, not a User FK"
     timestamp created_at
     timestamp updated_at "nullable, set on modification"
-  }
-  ORGANIZATION {
-    uuid id PK
-    string name
-    text description "nullable"
-    string website_url "nullable"
-    string contact_email "nullable"
-    string address "nullable"
-    timestamp created_at
-    timestamp updated_at "nullable, set on modification"
-  }
-  COLLECTION_ACCESS {
-    uuid id PK
-    uuid collection_id FK
-    uuid user_id FK
-    string access_level "view or manage"
-    uuid granted_by FK "nullable"
-    timestamp granted_at
   }
   MEDIUM {
     uuid id PK
@@ -1066,19 +930,15 @@ erDiagram
 
 ```mermaid
 erDiagram
-  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
+  COLLECTION ||--o{ ARTIFACT : "optionally groups"
   COLLECTION ||--o{ ARTIST : "optionally groups"
   COLLECTION ||--o{ SCHOOL : "optionally groups"
   COLLECTION ||--o{ PERIOD : "optionally groups"
   COLLECTION ||--o{ COUNTRY : "optionally groups"
-  ORGANIZATION ||--o{ COLLECTION : "owns"
-  COLLECTION ||--o{ COLLECTION_ACCESS : "grants access via"
 
   COLLECTION {
     uuid id PK
-    uuid organization_id FK
     string collection_name
-    string type "public or private"
     string created_by_name "full name, not a User FK"
     string updated_by_name "nullable, full name, not a User FK"
     timestamp created_at
@@ -1089,9 +949,7 @@ erDiagram
 | Field | Type | Nullable | Description |
 |---|---|---|---|
 | id | UUID (PK) | No | Primary key |
-| organization_id | UUID (FK → Organization) | No | Owning museum/institution — every Collection belongs to exactly one Organization |
 | collection_name | String | No | Name of the collection/exhibit/grouping |
-| type | String | No | `public` or `private` — controls whether the collection is visible in the public catalog |
 | created_by_name | String | No | Full name of the staff member who created the Collection, captured as text at creation time — not a foreign key to `User` |
 | updated_by_name | String | Yes | Full name of whoever last modified it; `NULL` until first edit |
 | created_at | Timestamp | No | Creation time |
@@ -1105,7 +963,7 @@ erDiagram
   ARTIFACT }o--|| PERIOD : "belongs to"
   ARTIFACT }o--o| SCHOOL : "attributed to (optional)"
   ARTIFACT }o--|| MEDIUM : "made of"
-  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
+  ARTIFACT }o--o| COLLECTION : "belongs to (optional)"
   ARTIFACT ||--o{ ATTACHMENT : has
   ARTIFACT }o--|| USER : "created by"
 ```
@@ -1120,11 +978,9 @@ erDiagram
 | artist_id | UUID (FK → Artist) | Yes | Creator, if known |
 | period_id | UUID (FK → Period) | No | Historical/artistic period |
 | school_id | UUID (FK → School) | Yes | Direct school attribution, independent of Artist |
+| collection_id | UUID (FK → Collection) | Yes | Optional grouping (exhibit, donor collection, etc.) |
 | created_by | UUID (FK → User) | No | Staff member who created the record |
 | status | String | No | `draft` or `published` |
-
-Collection membership is no longer a field on Artifact — see `ArtifactCollection`
-(Section 2.4.3, Appendix A.14) for the many-to-many join.
 
 ### A.3 Artist
 
@@ -1283,88 +1139,3 @@ erDiagram
 | reviewed_by | UUID (FK → User) | Yes | Staff member who reviewed it, once actioned |
 | created_at | Timestamp | No | Submission time |
 | reviewed_at | Timestamp | Yes | Review time, once actioned |
-
-### A.12 Organization
-
-```mermaid
-erDiagram
-  ORGANIZATION ||--o{ COLLECTION : "owns"
-
-  ORGANIZATION {
-    uuid id PK
-    string name
-    text description "nullable"
-    string website_url "nullable"
-    string contact_email "nullable"
-    string address "nullable"
-    timestamp created_at
-    timestamp updated_at "nullable, set on modification"
-  }
-```
-
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| id | UUID (PK) | No | Primary key |
-| name | String | No | Museum/institution name |
-| description | Text | Yes | About the museum |
-| website_url | String | Yes | Public website |
-| contact_email | String | Yes | General contact address |
-| address | String | Yes | Physical/mailing address |
-| created_at | Timestamp | No | Creation time |
-| updated_at | Timestamp | Yes | Last modification time; `NULL` until first edit |
-
-### A.13 CollectionAccess
-
-```mermaid
-erDiagram
-  COLLECTION ||--o{ COLLECTION_ACCESS : "grants access via"
-  USER ||--o{ COLLECTION_ACCESS : "granted access to"
-  USER ||--o{ COLLECTION_ACCESS : "granted by (optional)"
-
-  COLLECTION_ACCESS {
-    uuid id PK
-    uuid collection_id FK
-    uuid user_id FK
-    string access_level "view or manage"
-    uuid granted_by FK "nullable"
-    timestamp granted_at
-  }
-```
-
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| id | UUID (PK) | No | Primary key |
-| collection_id | UUID (FK → Collection) | No | The `private` Collection being granted access to |
-| user_id | UUID (FK → User) | No | The staff member granted access |
-| access_level | String | No | `view` or `manage` — see Section 2.4.2 |
-| granted_by | UUID (FK → User) | Yes | Staff member who made the grant, if known |
-| granted_at | Timestamp | No | When the grant was made |
-
-Note: a unique constraint on (`collection_id`, `user_id`) ensures at most one
-grant row per user per Collection — re-granting updates `access_level` in place
-rather than inserting a second row.
-
-### A.14 ArtifactCollection
-
-```mermaid
-erDiagram
-  ARTIFACT ||--o{ ARTIFACT_COLLECTION : "tagged via"
-  COLLECTION ||--o{ ARTIFACT_COLLECTION : "tags"
-
-  ARTIFACT_COLLECTION {
-    uuid id PK
-    uuid artifact_id FK
-    uuid collection_id FK
-    timestamp added_at
-  }
-```
-
-| Field | Type | Nullable | Description |
-|---|---|---|---|
-| id | UUID (PK) | No | Primary key |
-| artifact_id | UUID (FK → Artifact) | No | The Artifact being tagged |
-| collection_id | UUID (FK → Collection) | No | The Collection it's tagged into |
-| added_at | Timestamp | No | When the Artifact was added to the Collection |
-
-Note: a unique constraint on (`artifact_id`, `collection_id`) prevents
-duplicate tags — see Section 2.4.3.
