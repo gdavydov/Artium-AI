@@ -26,16 +26,20 @@ without one.
 - `src/lib/auth-context.tsx` — `AuthProvider`/`useAuth()`, JWT stored in
   `localStorage`, decoded client-side for `canEdit` checks (the backend
   still verifies the token independently on every request)
-- `src/app/` — App Router routes: `/login`, `/museum`, `/collection` are
-  live (real GraphQL queries/mutations against `../backend`).
-  `/artifact/[id]` and `/artist/[id]` still render mock data — the backend
-  has no full Artifact/Artist detail query yet (only
-  `attachments`/`artistsByCollection`), so wiring those up is a follow-on
-  piece of backend work, not just a frontend change.
+- `src/app/` — App Router routes, all live (real GraphQL against
+  `../backend`): `/login`, `/museum`, `/collection`, `/artifact/[id]`,
+  `/artist/[id]`
 
 Verified end-to-end against a real backend + Postgres while building this:
-`/museum` and `/collection` load real data, `login` issues a real JWT, and
-guarded mutations correctly reject requests without one.
+`/museum` and `/collection` load/save real data, `login` issues a real JWT,
+guarded mutations correctly reject requests without one, and
+`/artifact/[id]`/`/artist/[id]` render a real seeded Artifact/Artist
+(title, medium, artist name, bio, Period, linked works).
+
+Known gaps carried from the backend (see its README): no `birthYear`/
+`deathYear` on Artist, no `label`/`role` on Attachment, and
+`primaryImageUrl`/`thumbnailUrl` are a best-effort "first image attachment"
+pick rather than an explicit primary-image flag.
 
 ## Deploying to Vercel or Railway
 

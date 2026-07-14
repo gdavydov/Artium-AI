@@ -48,4 +48,23 @@ export class AttachmentsService {
   findByArtifact(artifactId: string) {
     return this.prisma.attachment.findMany({ where: { artifactId } });
   }
+
+  /** Resolves one Attachment row into the display shape ArtifactPage.tsx and
+   *  AboutArtistPage.tsx consume — used by ArtifactsService/ArtistsService
+   *  rather than duplicating the signed-URL/label logic in each. Swallows
+   *  storage errors (e.g. unconfigured credentials in dev) so a broken
+   *  R2/S3 connection degrades to "no preview" instead of failing the whole
+   *  query. */
+  async toDetail(attachment: { id: string; fileUrl: string; fileType: string }) {
+    const label = attachment.fileUrl.split('/').pop() || attachment.fileUrl;
+
+    let previewUrl: string | undefined;
+    try {
+      previewUrl = await this.storage.getDownloadUrl(attachment.fileUrl);
+    } catch {
+      previewUrl = undefined;
+    }
+
+    return { id: attachment.id, fileUrl: attachment.fileUrl, fileType: attachment.fileType, label, previewUrl };
+  }
 }

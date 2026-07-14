@@ -8,12 +8,16 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AttachmentsService } from '../attachments/attachments.service';
 
 const MAX_PORTRAIT_SIZE = 16 * 1024 * 1024; // 16MB — MySQL MEDIUMBLOB ceiling
 
 @Injectable()
 export class ArtistsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly attachmentsService: AttachmentsService,
+  ) {}
 
   /** Artists tagged to a Collection (Artist.collectionId — Section 2.4),
    *  for the Artists list on CollectionForm.tsx. Portrait bytes are
@@ -25,6 +29,49 @@ export class ArtistsService {
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
     });
+  }
+
+  /** Full detail for AboutArtistPage.tsx: identity/bio, Period/School,
+   *  whether a portrait is set, this artist's works (with a best-effort
+   *  thumbnail — see ArtifactsService.findDetail for the same heuristic),
+   *  and every Attachment across those works. Returns null if not found. */
+  async findDetail(id: string) {
+    const artist = await this.prisma.artist.findUnique({
+      where: { id },
+      include: { period: true, school: true },
+    });
+    if (!artist) return null;
+
+    const works = await this.prisma.artifact.findMany({
+      where: { artistId: id },
+      include: { attachments: true },
+      orderBy: { title: 'asc' },
+    });
+
+    const artifacts = await Promise.all(
+      works.map(async (work) => {
+        const primary = work.attachments.find((a) => a.fileType.startsWith('image/'));
+        const thumbnailUrl = primary ? (await this.attachmentsService.toDetail(primary)).previewUrl : undefined;
+        return { id: work.id, title: work.title, thumbnailUrl };
+      }),
+    );
+
+    const attachments = await Promise.all(
+      works.flatMap((work) => work.attachments).map((a) => this.attachmentsService.toDetail(a)),
+    );
+
+    return {
+      id: artist.id,
+      name: artist.name,
+      bio: artist.bio,
+      schoolName: artist.school?.name,
+      periodName: artist.period.name,
+      periodStartYear: artist.period.startYear,
+      periodEndYear: artist.period.endYear,
+      hasPortrait: Boolean(artist.portraitImage),
+      artifacts,
+      attachments,
+    };
   }
 
   /** Accepts raw image bytes (already validated/decoded by the controller)

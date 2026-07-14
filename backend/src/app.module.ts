@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { CollectionsModule } from './collections/collections.module';
 import { ArtistsModule } from './artists/artists.module';
+import { ArtifactsModule } from './artifacts/artifacts.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 
 @Module({
@@ -22,6 +23,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
     OrganizationsModule,
     CollectionsModule,
     ArtistsModule,
+    ArtifactsModule,
     AttachmentsModule,
   ],
 })

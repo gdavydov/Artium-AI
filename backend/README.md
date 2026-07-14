@@ -32,15 +32,27 @@ this.
   Contributor with a `manage` CollectionAccess grant — see
   `canManageCollection()`)
 - `src/artists/` — Artist portrait upload/read (REST, not GraphQL — binary
-  streaming) plus `artistsByCollection` (GraphQL)
-- `src/attachments/` — Artifact file attachments (two-step signed-upload flow)
+  streaming), `artistsByCollection` and `artistDetail` (GraphQL, backs
+  AboutArtistPage.tsx)
+- `src/artifacts/` — `artifact(id)` detail query, backs ArtifactPage.tsx
+- `src/attachments/` — Artifact file attachments (two-step signed-upload
+  flow) plus `toDetail()`, shared by artists/artifacts to resolve a signed
+  preview URL + display label for each Attachment
 - `src/storage/` — S3/Cloudflare R2 abstraction (see Design Document Section
   6.2 for the key layout)
 - `src/prisma/` — Prisma client wrapper, injected app-wide
 
-Known gap: `CollectionsService.findById()` doesn't yet enforce the private-
-Collection visibility rule (Section 2.4.2) the way `listVisibleTo()` does —
-see the `TODO` in that file.
+Known gaps:
+- `CollectionsService.findById()` doesn't yet enforce the private-Collection
+  visibility rule (Section 2.4.2) the way `listVisibleTo()` does — see the
+  `TODO` in that file.
+- `Artist` has no `birthYear`/`deathYear` columns and `Attachment` has no
+  `label`/`role` columns — `artistDetail`/`artifact` derive what they can
+  (a filename-based label) and leave the rest `null`/undefined rather than
+  inventing data. Adding those columns is a schema change, not a resolver fix.
+- `primaryImageUrl`/`thumbnailUrl` are a best-effort pick (first image-type
+  Attachment) — there's no stored "this is the primary image" flag on
+  Attachment today.
 
 ## Deploying to Railway
 
