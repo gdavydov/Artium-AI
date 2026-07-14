@@ -39,11 +39,51 @@ export interface PeriodInput {
 export class CollectionsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // TODO: unlike listVisibleTo(), this doesn't yet enforce Section 2.4.2's
+  // private-Collection visibility rule — anyone who knows/guesses an id can
+  // fetch a private Collection directly. Needs the same admin/public/
+  // CollectionAccess-grant check before this is safe to expose beyond
+  // internal use.
   findById(id: string) {
     return this.prisma.collection.findUnique({
       where: { id },
       include: { periods: true },
     });
+  }
+
+  /** Collections visible to the given caller — enforces the private-Collection
+   *  visibility rule from Section 2.4.2: Admins see everything; everyone else
+   *  sees `public` Collections plus any `private` one they hold a
+   *  CollectionAccess grant on. Pass undefined for an anonymous caller
+   *  (public Collections only). */
+  async listVisibleTo(caller?: { id: string; role: string }) {
+    if (caller?.role === 'admin') {
+      return this.prisma.collection.findMany({
+        include: { periods: true },
+        orderBy: { collectionName: 'asc' },
+      });
+    }
+
+    const accessibleIds = caller
+      ? (
+          await this.prisma.collectionAccess.findMany({
+            where: { userId: caller.id },
+            select: { collectionId: true },
+          })
+        ).map((a) => a.collectionId)
+      : [];
+
+    return this.prisma.collection.findMany({
+      where: { OR: [{ type: 'public' }, { id: { in: accessibleIds } }] },
+      include: { periods: true },
+      orderBy: { collectionName: 'asc' },
+    });
+  }
+
+  /** All Periods, for the "assign an existing Period" dropdown in
+   *  CollectionForm.tsx — not scoped to any one Collection. */
+  listPeriods() {
+    return this.prisma.period.findMany({ orderBy: { startYear: 'asc' } });
   }
 
   /** True if the given user may edit this Collection: Admin/Curator always,

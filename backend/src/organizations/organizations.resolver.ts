@@ -1,13 +1,14 @@
 // src/organizations/organizations.resolver.ts
 //
-// TODO: once auth is wired up (a JwtAuthGuard + RolesGuard + @Roles
-// decorator under src/common/), restrict createOrganization/
-// updateOrganization to @Roles('admin', 'curator') — Contributors must not
-// be able to call these (Design Document Section 3.2 permission matrix).
-// This resolver is otherwise the real, working implementation of the
-// service above.
+// Only Admin/Curator may create or edit an Organization (Design Document
+// Section 3.2 permission matrix) — enforced below via JwtAuthGuard +
+// RolesGuard. Reading is public (museum info is shown on the public catalog).
 
 import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { Organization } from './entities/organization.entity';
 import { OrganizationsService } from './organizations.service';
 import { OrganizationInputDto } from './dto/organization.input';
@@ -16,7 +17,6 @@ import { OrganizationInputDto } from './dto/organization.input';
 export class OrganizationsResolver {
   constructor(private readonly organizationsService: OrganizationsService) {}
 
-  // Public: museum info is shown on the public catalog too
   @Query(() => [Organization])
   organizations() {
     return this.organizationsService.list();
@@ -27,11 +27,15 @@ export class OrganizationsResolver {
     return this.organizationsService.findById(id);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'curator')
   @Mutation(() => Organization)
   createOrganization(@Args('input') input: OrganizationInputDto) {
     return this.organizationsService.create(input);
   }
 
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'curator')
   @Mutation(() => Organization)
   updateOrganization(
     @Args('id', { type: () => ID }) id: string,

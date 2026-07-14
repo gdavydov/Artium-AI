@@ -15,6 +15,18 @@ const MAX_PORTRAIT_SIZE = 16 * 1024 * 1024; // 16MB — MySQL MEDIUMBLOB ceiling
 export class ArtistsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Artists tagged to a Collection (Artist.collectionId — Section 2.4),
+   *  for the Artists list on CollectionForm.tsx. Portrait bytes are
+   *  deliberately not selected here; the caller builds the image URL from
+   *  `id` and hits GET /artists/:id/portrait instead. */
+  findByCollection(collectionId: string) {
+    return this.prisma.artist.findMany({
+      where: { collectionId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+  }
+
   /** Accepts raw image bytes (already validated/decoded by the controller)
    *  and stores them directly on the Artist row. No object storage involved. */
   async setPortrait(artistId: string, imageBuffer: Buffer, contentType: string) {
