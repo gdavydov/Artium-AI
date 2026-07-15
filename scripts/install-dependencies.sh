@@ -297,5 +297,5 @@ if [ "$INSTALL_SUPABASE_CLI" = "true" ]; then
 fi
 
 echo
-echo "Next steps: see docs/INSTALL.md for how to log each CLI in (railway login,"
+echo "Next steps: see docs/INSTALL_linux_deb.md for how to log each CLI in (railway login,"
 echo "vercel login, wrangler login) and finish setting up backend/ and frontend/."
