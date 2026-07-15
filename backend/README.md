@@ -67,6 +67,16 @@ railway init            # or `railway link` to an existing project
 railway up
 ```
 
+On a remote box/SSH session/coding agent with no local browser, use
+`railway login -b` (`--browserless`) instead — it prints a sign-in link
+and short code to complete from any device with a browser, rather than
+trying to open one locally. The device-code flow it uses can be flaky
+(polling/timing), so **if it doesn't complete, just re-run it a few times
+until it succeeds** rather than assuming something's actually broken.
+If a browser *is* available on the machine running this, prefer plain
+`railway login` — the CLI's own docs note the browser flow completes more
+reliably than `-b` when there's a choice.
+
 Then, in the Railway dashboard, set these environment variables on the
 service (same names as `.env.example`): `DATABASE_URL`, `JWT_SECRET`,
 `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_ENDPOINT`,
