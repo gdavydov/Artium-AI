@@ -10,6 +10,13 @@ Postgres (schema.sql, reset.sql, and both seed-data/*.sql files load with
 zero errors and are safe to re-run) — see `supabase-schema/` and
 `seed-data/`'s own file headers for the same idempotency notes.
 
+If you have a shell with `psql` and network access to the target
+database, **`scripts/load-seed-data.sh` automates Steps 3–5 below**
+(admin user + both seed files, with the same verification query) — see
+`docs/LOAD_SEED_DATA.md`. This runbook's SQL Editor steps are for when you
+don't have that (or want to run Steps 1–2 by hand regardless, since those
+are the destructive/schema-defining ones).
+
 ## Prerequisites
 
 - A Supabase project, and either:
