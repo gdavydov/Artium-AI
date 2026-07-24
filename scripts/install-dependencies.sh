@@ -122,7 +122,14 @@ fi
 
 step "Installing base prerequisites (git, curl, jq, openssl, build tools, PostgreSQL client)"
 
-as_root apt-get update -y
+# A failed `apt-get update` here usually means one third-party PPA in this
+# machine's existing sources is unreachable/unsigned — common and harmless
+# if the main Ubuntu archives (archive.ubuntu.com, security.ubuntu.com)
+# still updated fine, which is all the packages below actually need. Don't
+# let that hard-fail the whole script via set -e; the apt-get install right
+# after will surface a real error itself if a needed package is genuinely
+# unavailable.
+as_root apt-get update -y || echo "Warning: apt-get update had failures above (likely an unrelated third-party PPA) — continuing." >&2
 as_root apt-get install -y \
   ca-certificates \
   curl \
@@ -167,12 +174,15 @@ if have pnpm; then
 elif have corepack; then
   # corepack ships with Node >=16.13 but must be explicitly enabled; this is
   # the officially recommended way to get pnpm without a separate installer.
-  corepack enable
+  # `corepack enable` writes shims into Node's global bin directory — root-
+  # owned when Node was installed system-wide via NodeSource/apt (the case
+  # this script itself sets up in step 2), hence as_root here too.
+  as_root corepack enable
   corepack prepare pnpm@latest --activate
   echo "pnpm $(pnpm -v) installed via corepack."
 else
   # Fallback for older Node builds without corepack.
-  npm install -g pnpm
+  as_root npm install -g pnpm
   echo "pnpm $(pnpm -v) installed via npm."
 fi
 
@@ -183,7 +193,7 @@ step "Installing Railway CLI"
 if have railway; then
   echo "railway $(railway --version) already installed — skipping."
 else
-  npm install -g @railway/cli
+  as_root npm install -g @railway/cli
   echo "railway $(railway --version) installed."
 fi
 
@@ -194,7 +204,7 @@ step "Installing Vercel CLI"
 if have vercel; then
   echo "vercel $(vercel --version) already installed — skipping."
 else
-  npm install -g vercel
+  as_root npm install -g vercel
   echo "vercel $(vercel --version) installed."
 fi
 
@@ -205,7 +215,7 @@ step "Installing Wrangler (Cloudflare CLI)"
 if have wrangler; then
   echo "wrangler $(wrangler --version) already installed — skipping."
 else
-  npm install -g wrangler
+  as_root npm install -g wrangler
   echo "wrangler $(wrangler --version) installed."
 fi
 
@@ -273,7 +283,7 @@ if [ "$INSTALL_GLOBAL_PROJECT_CLIS" = "true" ]; then
   # node_modules (see its "scripts" section) once you've run `npm install`
   # inside backend/. This just makes the bare `nest`/`prisma` commands
   # available anywhere on this machine.
-  npm install -g @nestjs/cli prisma
+  as_root npm install -g @nestjs/cli prisma
   echo "nest:   $(nest --version 2>/dev/null || echo 'installed')"
   echo "prisma: $(prisma --version 2>/dev/null | head -1 || echo 'installed')"
 else
