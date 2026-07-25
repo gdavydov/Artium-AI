@@ -1,0 +1,288 @@
+// =============================================================================
+// Artium-Gallery — Prisma Schema
+// Matches ../../supabase-schema/schema.sql and the data dictionary in
+// Appendix A of the Design Document. Target: PostgreSQL (Supabase). For the
+// private/MySQL variant (Section 8 of the Design Document), change
+// provider = "mysql" below.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Role & User (staff accounts only — no public/anonymous accounts)
+// =============================================================================
+
+model Role {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String @unique // "admin" | "curator" | "contributor"
+
+  users User[]
+
+  @@map("role")
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  passwordHash  String   @map("password_hash") // bcrypt/argon2 — never plaintext
+  roleId        String   @map("role_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  role              Role            @relation(fields: [roleId], references: [id])
+  artifactsCreated  Artifact[]      @relation("ArtifactCreatedBy")
+  attachmentsUploaded Attachment[]  @relation("AttachmentUploadedBy")
+  mediumsAdded      Medium[]        @relation("MediumAddedBy")
+  suggestionsReviewed EditSuggestion[] @relation("SuggestionReviewedBy")
+  collectionAccessGranted   CollectionAccess[] @relation("CollectionAccessUser")
+  collectionAccessGrantedBy CollectionAccess[] @relation("CollectionAccessGrantedBy")
+
+  @@map("user")
+}
+
+// =============================================================================
+// Organization (museum/institution — owns one or more Collections)
+// =============================================================================
+
+model Organization {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  description   String?
+  websiteUrl    String?   @map("website_url")
+  contactEmail  String?   @map("contact_email")
+  address       String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @map("updated_at")
+
+  collections Collection[]
+
+  @@map("organization")
+}
+
+// =============================================================================
+// Collection (owned by an Organization — audit fields store names, not User
+// FKs, per the design decision to keep a readable record even if accounts
+// change)
+// =============================================================================
+
+model Collection {
+  id              String    @id @default(uuid()) @db.Uuid
+  organizationId  String    @map("organization_id") @db.Uuid
+  collectionName  String    @map("collection_name")
+  type            String    @default("private") // "public" | "private"
+  createdByName   String    @map("created_by_name")
+  updatedByName   String?   @map("updated_by_name")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime? @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  countries Country[]
+  periods   Period[]
+  schools   School[]
+  artists   Artist[]
+  artifactTags ArtifactCollection[]
+  accessGrants CollectionAccess[]
+
+  @@map("collection")
+}
+
+// =============================================================================
+// CollectionAccess (join table — grants a User "view" or "manage" access to a
+// private Collection; see Section 2.4.2 of the Design Document. Admins bypass
+// this table entirely in application logic and can always see everything.)
+// =============================================================================
+
+model CollectionAccess {
+  id            String   @id @default(uuid()) @db.Uuid
+  collectionId  String   @map("collection_id") @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  accessLevel   String   @map("access_level") // "view" | "manage"
+  grantedBy     String?  @map("granted_by") @db.Uuid
+  grantedAt     DateTime @default(now()) @map("granted_at")
+
+  collection      Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  user            User       @relation("CollectionAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+  grantedByUser   User?      @relation("CollectionAccessGrantedBy", fields: [grantedBy], references: [id])
+
+  @@unique([collectionId, userId])
+  @@map("collection_access")
+}
+
+// =============================================================================
+// Reference entities: Country, Period, School, Medium
+// =============================================================================
+
+model Country {
+  id            String  @id @default(uuid()) @db.Uuid
+  name          String
+  collectionId  String? @map("collection_id") @db.Uuid
+
+  collection Collection? @relation(fields: [collectionId], references: [id])
+  artists    Artist[]
+
+  @@map("country")
+}
+
+model Period {
+  id            String  @id @default(uuid()) @db.Uuid
+  name          String
+  startYear     Int     @map("start_year")
+  endYear       Int     @map("end_year")
+  collectionId  String? @map("collection_id") @db.Uuid
+
+  collection Collection? @relation(fields: [collectionId], references: [id])
+  artists    Artist[]
+  artifacts  Artifact[]
+
+  @@map("period")
+}
+
+model School {
+  id            String  @id @default(uuid()) @db.Uuid
+  name          String
+  description   String
+  collectionId  String? @map("collection_id") @db.Uuid
+
+  collection Collection? @relation(fields: [collectionId], references: [id])
+  artists    Artist[]
+  artifacts  Artifact[]
+
+  @@map("school")
+}
+
+model Medium {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String   // e.g. "oil on canvas", "marble"
+  isActive   Boolean  @default(true) @map("is_active")
+  addedBy    String?  @map("added_by") @db.Uuid // any staff role may add an entry
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  addedByUser User?      @relation("MediumAddedBy", fields: [addedBy], references: [id])
+  artifacts   Artifact[]
+
+  @@map("medium")
+}
+
+// =============================================================================
+// Artist
+// =============================================================================
+
+model Artist {
+  id                   String  @id @default(uuid()) @db.Uuid
+  name                 String
+  bio                  String
+  portraitImage        Bytes?  @map("portrait_image")         // embedded portrait (nullable)
+  portraitContentType  String? @map("portrait_content_type")  // e.g. "image/jpeg"
+  countryId            String  @map("country_id") @db.Uuid
+  periodId             String  @map("period_id") @db.Uuid
+  schoolId             String? @map("school_id") @db.Uuid     // optional
+  collectionId         String? @map("collection_id") @db.Uuid // optional
+
+  country    Country     @relation(fields: [countryId], references: [id])
+  period     Period      @relation(fields: [periodId], references: [id])
+  school     School?     @relation(fields: [schoolId], references: [id])
+  collection Collection? @relation(fields: [collectionId], references: [id])
+  artifacts  Artifact[]
+
+  @@map("artist")
+}
+
+// =============================================================================
+// Artifact
+// =============================================================================
+
+model Artifact {
+  id            String   @id @default(uuid()) @db.Uuid
+  title         String
+  description   String
+  location      String?  // nullable free text
+  mediumId      String   @map("medium_id") @db.Uuid
+  artistId      String?  @map("artist_id") @db.Uuid  // nullable (unattributed works)
+  periodId      String   @map("period_id") @db.Uuid
+  schoolId      String?  @map("school_id") @db.Uuid  // nullable, independent of artist
+  createdBy     String   @map("created_by") @db.Uuid
+  status        String   @default("draft") // "draft" | "published"
+
+  medium      Medium       @relation(fields: [mediumId], references: [id])
+  artist      Artist?      @relation(fields: [artistId], references: [id])
+  period      Period       @relation(fields: [periodId], references: [id])
+  school      School?      @relation(fields: [schoolId], references: [id])
+  createdByUser User       @relation("ArtifactCreatedBy", fields: [createdBy], references: [id])
+  attachments Attachment[]
+  collectionTags ArtifactCollection[]
+
+  @@map("artifact")
+}
+
+// =============================================================================
+// ArtifactCollection (join table — an Artifact can belong to any number of
+// Collections at once; see Section 2.4.3 of the Design Document. Unlike
+// Artist/School/Period/Country's single nullable collectionId, this is a true
+// many-to-many relationship.)
+// =============================================================================
+
+model ArtifactCollection {
+  id            String   @id @default(uuid()) @db.Uuid
+  artifactId    String   @map("artifact_id") @db.Uuid
+  collectionId  String   @map("collection_id") @db.Uuid
+  addedAt       DateTime @default(now()) @map("added_at")
+
+  artifact   Artifact   @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@unique([artifactId, collectionId])
+  @@map("artifact_collection")
+}
+
+// =============================================================================
+// Attachment (metadata only — actual files live in object storage, e.g. R2)
+// =============================================================================
+
+model Attachment {
+  id          String @id @default(uuid()) @db.Uuid
+  artifactId  String @map("artifact_id") @db.Uuid
+  uploadedBy  String @map("uploaded_by") @db.Uuid
+  fileUrl     String @map("file_url") // object storage key, not raw bytes
+  fileType    String @map("file_type") // MIME type
+
+  artifact       Artifact @relation(fields: [artifactId], references: [id], onDelete: Cascade)
+  uploadedByUser User     @relation("AttachmentUploadedBy", fields: [uploadedBy], references: [id])
+
+  @@map("attachment")
+}
+
+// =============================================================================
+// EditSuggestion (public wiki-style moderation queue)
+// =============================================================================
+
+model EditSuggestion {
+  id              String    @id @default(uuid()) @db.Uuid
+  entityType      String    @map("entity_type") // "artifact" | "artist" | "school" ...
+  entityId        String    @map("entity_id") @db.Uuid // generic reference, validated in app code — NOT a real FK
+  fieldName       String    @map("field_name") // e.g. "description"
+  originalText    String    @map("original_text")
+  proposedText    String    @map("proposed_text")
+  submitterName   String?   @map("submitter_name")  // optional — anonymous ok
+  submitterEmail  String?   @map("submitter_email") // optional
+  status          String    @default("pending") // "pending" | "approved" | "rejected"
+  reviewedBy      String?   @map("reviewed_by") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  reviewedAt      DateTime? @map("reviewed_at")
+
+  reviewedByUser User? @relation("SuggestionReviewedBy", fields: [reviewedBy], references: [id])
+
+  // entityId is intentionally NOT a Prisma relation: it's a generic/polymorphic
+  // reference (matches schema.sql, which has no FK constraint on entity_id).
+  // A single column cannot hold a real foreign key to more than one table, so
+  // validation that entity_id/entity_type point to an existing row is handled
+  // in application code (the suggestions service), not the database schema.
+
+  @@index([entityType, entityId])
+  @@map("edit_suggestion")
+}

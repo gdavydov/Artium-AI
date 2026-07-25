@@ -1,2 +1,31 @@
 # Artium-AI
-Repo for Artium Claude AI app
+Repository for Artium Claude AI app
+
+## Layout
+
+- `backend/` — NestJS + Prisma + GraphQL API (see `backend/README.md`)
+- `frontend/` — Next.js catalog app (see `frontend/README.md`)
+- `supabase-schema/` — raw SQL (`schema.sql`, `reset.sql`) for manual use in the Supabase SQL Editor
+- `seed-data/` — seed scripts/data for populating the database
+- `scripts/install-dependencies.sh` — installs every CLI needed to build/deploy this repo on a fresh Linux machine (see `docs/INSTALL_linux_deb.md`)
+- `scripts/load-seed-data.sh` — loads the seed data in `seed-data/` into an already-schema'd database (see `docs/LOAD_SEED_DATA.md`)
+- `docs/Artium-Gallery_Design_Document.md` / `.docx` — full architecture and data model
+- `docs/Artium-Gallery_Business_Requirements_Document.docx`, `docs/Artium-Gallery_Deployment_Environments.docx` — supporting docs
+
+## Setting up a new machine
+
+```bash
+chmod +x scripts/install-dependencies.sh
+./scripts/install-dependencies.sh
+```
+
+Installs Node.js, npm, pnpm, git, `psql`, and the Railway/Vercel/Wrangler/
+Supabase CLIs. See `docs/INSTALL_linux_deb.md` for what each one is for and what to
+do next.
+
+## Cleaning and seeding a database
+
+- Full sequence (reset → schema → seed), as copy-paste SQL Editor steps:
+  `docs/RUNBOOK_seed_supabase.md`.
+- Data-loading only, once the schema already exists:
+  `./scripts/load-seed-data.sh` — see `docs/LOAD_SEED_DATA.md`.

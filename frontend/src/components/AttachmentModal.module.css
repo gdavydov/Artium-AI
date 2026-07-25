@@ -1,0 +1,124 @@
+/* frontend/src/components/AttachmentModal.module.css
+ *
+ * Same warm-stone/oxblood/verdigris tokens as ArtifactPage/AboutArtistPage.
+ * Redefined locally since <dialog> renders in the top layer, outside the
+ * component tree that carries the --ink/--canvas custom properties.
+ */
+
+.dialog {
+  --ink: #211c1a;
+  --ink-soft: #524a42;
+  --canvas: #e6e1d6;
+  --panel: #f6f3ec;
+  --panel-line: #d9d2c2;
+  --oxblood: #7a2426;
+
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  max-width: min(90vw, 900px);
+  max-height: 85vh;
+  color: var(--ink);
+  background: var(--panel);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+.dialog::backdrop {
+  background: rgba(15, 12, 9, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  .dialog {
+    --ink: #ece6da;
+    --ink-soft: #b3a999;
+    --canvas: #16130f;
+    --panel: #221d17;
+    --panel-line: #38312a;
+    --oxblood: #c15a53;
+  }
+}
+:global(:root[data-theme='dark']) .dialog {
+  --ink: #ece6da;
+  --ink-soft: #b3a999;
+  --canvas: #16130f;
+  --panel: #221d17;
+  --panel-line: #38312a;
+  --oxblood: #c15a53;
+}
+:global(:root[data-theme='light']) .dialog {
+  --ink: #211c1a;
+  --ink-soft: #524a42;
+  --canvas: #e6e1d6;
+  --panel: #f6f3ec;
+  --panel-line: #d9d2c2;
+  --oxblood: #7a2426;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--panel-line);
+}
+.title {
+  font-family: Charter, Georgia, serif;
+  font-size: 0.95rem;
+  color: var(--ink);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.closeButton {
+  border: none;
+  background: none;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+}
+.closeButton:hover,
+.closeButton:focus-visible {
+  color: var(--oxblood);
+  outline: none;
+}
+.closeButton:focus-visible {
+  box-shadow: 0 0 0 2px var(--oxblood);
+}
+
+.body {
+  overflow: auto;
+  background: var(--canvas);
+}
+
+.previewImage {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 75vh;
+  object-fit: contain;
+}
+
+.previewFrame {
+  width: min(90vw, 900px);
+  height: 75vh;
+  border: none;
+}
+
+.fallback {
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+}
+.fallback a {
+  color: var(--oxblood);
+}

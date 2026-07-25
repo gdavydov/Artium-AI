@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Early Netherlandish School",
+    "description": "The founding generation of Northern Renaissance oil painting, centered in Flanders (modern Belgium/Netherlands) from roughly 1420-1500. Known for meticulous realism, symbolic detail, and pioneering the use of layered oil glazes."
+  },
+  {
+    "name": "German Renaissance School",
+    "description": "German painters and printmakers of the 15th-16th centuries who fused Northern detail with ideas absorbed from the Italian Renaissance, producing some of the era's most technically accomplished portraiture and graphic art."
+  },
+  {
+    "name": "Flemish School",
+    "description": "The second generation of Netherlandish painters (early-to-mid 16th century), expanding beyond religious subjects into landscape, peasant life, and genre scenes."
+  },
+  {
+    "name": "French Renaissance School",
+    "description": "French court painters of the 15th-16th centuries, known for portraiture and manuscript illumination, working alongside but distinct from the Netherlandish and German traditions."
+  }
+]
